@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dwnylnf3wsy84"]
+
+[ext_resource type="Script" uid="uid://bt0gktjuylr68" path="res://scenes/agent/microphone.gd" id="1_pmicn"]
+
+[node name="Microphone" type="AudioStreamPlayer" unique_id=389042286]
+script = ExtResource("1_pmicn")

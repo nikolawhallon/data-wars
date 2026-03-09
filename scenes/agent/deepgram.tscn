@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://7p21h7lb5g1a"]
+
+[ext_resource type="Script" uid="uid://ddbi4jlw18mtc" path="res://scenes/agent/deepgram.gd" id="1_prss2"]
+[ext_resource type="PackedScene" uid="uid://dwnylnf3wsy84" path="res://scenes/agent/microphone.tscn" id="1_w42ji"]
+
+[node name="Deepgram" type="Node" unique_id=1228142323]
+script = ExtResource("1_prss2")
+
+[node name="Microphone" parent="." unique_id=389042286 instance=ExtResource("1_w42ji")]
+
+[connection signal="audio_captured" from="Microphone" to="." method="_on_microphone_audio_captured"]

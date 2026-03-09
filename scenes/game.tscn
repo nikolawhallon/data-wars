@@ -1,0 +1,55 @@
+[gd_scene format=3 uid="uid://bfxbeex3gufn7"]
+
+[ext_resource type="Script" uid="uid://cusfsng4tggj7" path="res://scenes/game.gd" id="1_yqjtg"]
+[ext_resource type="PackedScene" uid="uid://7p21h7lb5g1a" path="res://scenes/agent/deepgram.tscn" id="3_lnu2h"]
+[ext_resource type="PackedScene" uid="uid://bpi3iagfp8f3o" path="res://scenes/random_map.tscn" id="4_iywne"]
+[ext_resource type="PackedScene" uid="uid://wax5xqju7evu" path="res://scenes/cell_labels.tscn" id="4_lbhrr"]
+[ext_resource type="PackedScene" uid="uid://cn0ioholkgnb2" path="res://scenes/label_8.tscn" id="5_iywne"]
+[ext_resource type="Shader" uid="uid://bvlt4xw35vyu" path="res://scenes/palette_swap.gdshader" id="6_p57ef"]
+[ext_resource type="Script" uid="uid://cqpspisasjoe2" path="res://scenes/palette_swap.gd" id="7_u5sy4"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_u5sy4"]
+shader = ExtResource("6_p57ef")
+shader_parameter/pal0 = Color(0.17254902, 0.12941177, 0.21568628, 1)
+shader_parameter/pal1 = Color(0.4627451, 0.26666668, 0.38431373, 1)
+shader_parameter/pal2 = Color(0.6627451, 0.40784314, 0.40784314, 1)
+shader_parameter/pal3 = Color(0.92941177, 0.7058824, 0.6313726, 1)
+
+[node name="Game" type="Node2D" unique_id=241599765]
+script = ExtResource("1_yqjtg")
+
+[node name="RandomMap" parent="." unique_id=981697045 instance=ExtResource("4_iywne")]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=358609030]
+limit_left = 0
+limit_top = 0
+
+[node name="Deepgram" parent="." unique_id=1228142323 instance=ExtResource("3_lnu2h")]
+
+[node name="TtsPlayer" type="AudioStreamPlayer" parent="." unique_id=471878036]
+
+[node name="CellLabels" parent="." unique_id=888046892 instance=ExtResource("4_lbhrr")]
+z_index = 1
+
+[node name="ChatCanvas" type="CanvasLayer" parent="." unique_id=96994790 groups=["Debug"]]
+
+[node name="Label8" parent="ChatCanvas" unique_id=74538079 instance=ExtResource("5_iywne")]
+custom_minimum_size = Vector2(640, 480)
+offset_right = 640.0
+offset_bottom = 480.0
+autowrap_mode = 3
+max_lines_visible = 40
+
+[node name="PaletteSwapCanvas" type="CanvasLayer" parent="." unique_id=285679540]
+
+[node name="PaletteSwap" type="ColorRect" parent="PaletteSwapCanvas" unique_id=897535598]
+material = SubResource("ShaderMaterial_u5sy4")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("7_u5sy4")
+
+[connection signal="binary_packet_received" from="Deepgram" to="." method="_on_deepgram_binary_packet_received"]
+[connection signal="message_received" from="Deepgram" to="." method="_on_deepgram_message_received"]

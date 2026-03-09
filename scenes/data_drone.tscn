@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://cfx75ahoawsk3"]
+
+[ext_resource type="Script" uid="uid://pw4vp6juysuk" path="res://scenes/data_drone.gd" id="1_02qki"]
+[ext_resource type="Texture2D" uid="uid://cc5rkgb57p8dy" path="res://assets/data_drone.png" id="1_bdwxv"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_02qki"]
+radius = 8.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_31p4i"]
+radius = 8.0
+
+[node name="DataDrone" type="CharacterBody2D" unique_id=1663236689]
+collision_mask = 0
+script = ExtResource("1_02qki")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1270864911]
+texture = ExtResource("1_bdwxv")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1022469493]
+shape = SubResource("CircleShape2D_02qki")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1204678653]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=696639359]
+shape = SubResource("CircleShape2D_31p4i")

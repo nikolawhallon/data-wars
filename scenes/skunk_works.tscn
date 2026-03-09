@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dkk7irbj0fklh"]
+
+[ext_resource type="Texture2D" uid="uid://b3r36kuw472bu" path="res://assets/skunk_works.png" id="1_f1nbc"]
+
+[node name="SkunkWorks" type="Sprite2D" unique_id=857615151 groups=["SkunkWorks"]]
+texture = ExtResource("1_f1nbc")

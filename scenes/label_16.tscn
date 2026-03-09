@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://4ln87q4gxwkc"]
+
+[ext_resource type="FontFile" uid="uid://bfjqaiclupxlw" path="res://assets/kongtext.ttf" id="1_8bvii"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_am8wc"]
+font = ExtResource("1_8bvii")
+font_color = Color(0.92941177, 0.7058824, 0.6313726, 1)
+outline_size = 16
+outline_color = Color(0.4627451, 0.26666668, 0.38431373, 1)
+
+[node name="Label16" type="Label" unique_id=1136764659]
+offset_right = 40.0
+offset_bottom = 23.0
+text = "A1"
+label_settings = SubResource("LabelSettings_am8wc")

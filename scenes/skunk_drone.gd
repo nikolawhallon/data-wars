@@ -1,0 +1,25 @@
+extends CharacterBody2D
+
+
+const SPEED = 300.0
+
+var target = Vector2(128.0, 128.0)
+
+func _physics_process(delta: float) -> void:
+	if target == null:
+		return
+
+	var direction = (target - position).normalized()
+	velocity = direction * SPEED
+
+	move_and_slide()
+	
+	if global_position.distance_to(target) < 32:
+		target = null
+
+func _on_area_2d_body_entered(body: Node2D) -> void:
+	if body == self:
+		return
+	if body.is_in_group("SkunkDrone"):
+		body.queue_free()
+		queue_free()

@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://bwiqio6ve0qbh"]
+
+[ext_resource type="Texture2D" uid="uid://bhiekx7w48m7y" path="res://assets/spam_bot.png" id="1_6r5md"]
+[ext_resource type="Script" uid="uid://dqqt5uga88spu" path="res://scenes/spam_bot.gd" id="1_kl1lo"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_kl1lo"]
+radius = 8.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_r6ej7"]
+radius = 8.0
+
+[node name="SpamBot" type="CharacterBody2D" unique_id=552019670]
+collision_mask = 0
+script = ExtResource("1_kl1lo")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1042885366]
+texture = ExtResource("1_6r5md")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=30827190]
+shape = SubResource("CircleShape2D_kl1lo")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1308226184]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1016676424]
+shape = SubResource("CircleShape2D_r6ej7")

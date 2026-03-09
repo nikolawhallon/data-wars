@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://b3tp1of0u3u20"]
+
+[ext_resource type="Texture2D" uid="uid://dngncol6c3k4a" path="res://assets/data_center.png" id="1_3870i"]
+[ext_resource type="Script" uid="uid://jykvj08xaccd" path="res://scenes/data_center.gd" id="2_brcna"]
+
+[node name="DataCenter" type="Sprite2D" unique_id=871493217 groups=["DataCenter"]]
+texture = ExtResource("1_3870i")
+script = ExtResource("2_brcna")
+
+[node name="Timer" type="Timer" parent="." unique_id=226161082]
+autostart = true
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

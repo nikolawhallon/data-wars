@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cbxlvmqrnim3a"]
+
+[ext_resource type="Texture2D" uid="uid://brjpokv68o0rx" path="res://assets/site.png" id="1_t7a5y"]
+
+[node name="Site" type="Sprite2D" unique_id=72687701 groups=["Site"]]
+texture = ExtResource("1_t7a5y")
