@@ -103,11 +103,17 @@ func inject_user_message(content):
 	client.send_text(JSON.stringify(message))
 
 func update_prompt(new_prompt):
-	var message = {
-		"type": "UpdatePrompt",
-		"prompt": new_prompt
+	var first = {
+		"type": "ReplacePrompt",
+		"prompt": prompt + " - the following is the world state - " + new_prompt
 	}
-	client.send_text(JSON.stringify(message))
+	client.send_text(JSON.stringify(first))
+
+	#var second = {
+	#	"type": "UpdatePrompt",
+	#	"prompt": new_prompt
+	#}
+	#client.send_text(JSON.stringify(second))
 
 func send_function_call_response(function_name, content, id):
 	var message = {

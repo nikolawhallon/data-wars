@@ -96,7 +96,7 @@ func generate():
 	var map_origin = Vector2($Walls.get_used_rect().position) * tile_size
 	#var map_size = Vector2($Walls.get_used_rect().size) * tile_size
 
-	var water_number = 10
+	var water_number = 4
 	var waters = []
 	while water_number > 0:
 		var water = load("res://scenes/water.tscn").instantiate()
@@ -142,7 +142,7 @@ func generate():
 		water_number = water_number - 1
 		waters.append(water)
 
-	var transmission_tower_number = 10
+	var transmission_tower_number = 2
 	var transmission_towers = []
 	while transmission_tower_number > 0:
 		var transmission_tower = load("res://scenes/transmission_tower.tscn").instantiate()

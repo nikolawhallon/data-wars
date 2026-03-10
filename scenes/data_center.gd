@@ -1,8 +1,6 @@
 extends Sprite2D
 
 
-signal data_updated
-
 var rng = RandomNumberGenerator.new()
 
 var team = null
@@ -15,7 +13,7 @@ func _on_water_timer_timeout() -> void:
 	var water = get_parent()
 	var consumed = water.decrement(1)
 	team.data += consumed
-	data_updated.emit(team)
+	team.data_updated.emit()
 
 func _on_unit_timer_timeout() -> void:
 	if producing == "spam_bot":
@@ -35,7 +33,7 @@ func spawn_unit(type):
 		return "Unable to build unit: not enough Data available - try again later"
 
 	team.data -= 10
-	data_updated.emit(team)
+	team.data_updated.emit()
 	
 	producing = type
 	$UnitTimer.start()

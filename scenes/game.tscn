@@ -83,7 +83,7 @@ layout_mode = 2
 layout_mode = 2
 texture = ExtResource("7_kvuet")
 
-[node name="Label" type="Label" parent="UICanvas/MarginContainer2/VBoxContainer/HBoxContainer" unique_id=1119910899]
+[node name="Clicks" type="Label" parent="UICanvas/MarginContainer2/VBoxContainer/HBoxContainer" unique_id=1119910899]
 layout_mode = 2
 text = "0"
 label_settings = ExtResource("6_dinhu")
@@ -96,7 +96,7 @@ layout_mode = 2
 layout_mode = 2
 texture = ExtResource("8_trtic")
 
-[node name="Label" type="Label" parent="UICanvas/MarginContainer2/VBoxContainer/HBoxContainer2" unique_id=1259404286]
+[node name="Clicks" type="Label" parent="UICanvas/MarginContainer2/VBoxContainer/HBoxContainer2" unique_id=1259404286]
 layout_mode = 2
 text = "0"
 label_settings = ExtResource("6_dinhu")
@@ -110,7 +110,7 @@ custom_minimum_size = Vector2(640, 480)
 offset_right = 640.0
 offset_bottom = 480.0
 autowrap_mode = 3
-max_lines_visible = 24
+max_lines_visible = 22
 
 [node name="PaletteSwapCanvas" type="CanvasLayer" parent="." unique_id=285679540]
 
@@ -128,3 +128,5 @@ team = "player"
 
 [connection signal="binary_packet_received" from="Deepgram" to="." method="_on_deepgram_binary_packet_received"]
 [connection signal="message_received" from="Deepgram" to="." method="_on_deepgram_message_received"]
+[connection signal="clicks_updated" from="Player" to="." method="_on_player_clicks_updated"]
+[connection signal="data_updated" from="Player" to="." method="_on_player_data_updated"]

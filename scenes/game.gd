@@ -137,7 +137,8 @@ func _unhandled_input(event):
 
 func get_world_state() -> Dictionary:
 	var water_array: Array = []
-	var sites_array: Array = []
+	var site_array: Array = []
+	var transmission_tower_array: Array = []
 	var skunk_works_array: Array = []
 	var data_center_array: Array = []
 	var skunk_drone_array: Array = []
@@ -158,8 +159,19 @@ func get_world_state() -> Dictionary:
 		
 	for site in get_tree().get_nodes_in_group("Site"):
 		var p: Vector2 = site.global_position
-		sites_array.append({
+		site_array.append({
 			"id": int(site.get_instance_id()),
+			"position": {
+				"x": p.x,
+				"y": p.y
+			},
+			"cell": $CellLabels.pos_to_cell_label(p)
+		})
+
+	for transmission_tower in get_tree().get_nodes_in_group("TransmissionTower"):
+		var p: Vector2 = transmission_tower.global_position
+		transmission_tower_array.append({
+			"id": int(transmission_tower.get_instance_id()),
 			"position": {
 				"x": p.x,
 				"y": p.y
@@ -235,14 +247,14 @@ func get_world_state() -> Dictionary:
 			"cell": $CellLabels.pos_to_cell_label(p)
 		})
 
-	print(water_array.size())
-	print(sites_array.size())
-	print(skunk_works_array.size())
-	print(data_center_array.size())
-	print(skunk_drone_array.size())
-	print(data_drone_array.size())
-	print(spam_bot_array.size())
-	print(extractor_array.size())
+	#print(water_array.size())
+	#print(sites_array.size())
+	#print(skunk_works_array.size())
+	#print(data_center_array.size())
+	#print(skunk_drone_array.size())
+	#print(data_drone_array.size())
+	#print(spam_bot_array.size())
+	#print(extractor_array.size())
 
 	var world_state = {
 		"world": {
@@ -258,7 +270,8 @@ func get_world_state() -> Dictionary:
 			"cell_anchor": "center"
 		},
 		"waters": water_array,
-		"sites": sites_array,
+		"sites": site_array,
+		"transmission_towers": transmission_tower_array,
 		"skunk_works": skunk_works_array,
 		"data_centers": data_center_array,
 		"skunk_drones": skunk_drone_array,
@@ -269,9 +282,12 @@ func get_world_state() -> Dictionary:
 
 	return world_state
 
-func _on_data_center_data_updated(team):
-	if team == $Player:
-		$UICanvas/MarginContainer/HBoxContainer/Data.text = str($Player.data)
+func _on_player_data_updated():
+	$UICanvas/MarginContainer/HBoxContainer/Data.text = str($Player.data)
+
+
+func _on_player_clicks_updated():
+	$UICanvas/MarginContainer2/VBoxContainer/HBoxContainer/Clicks.text = str($Player.clicks)
 
 func build_building(site_id, building_type):
 	var site = instance_from_id(site_id)
@@ -293,7 +309,6 @@ func build_building(site_id, building_type):
 		water.add_child(data_center)
 		data_center.team = $Player
 		data_center.global_position = site.global_position
-		data_center.connect("data_updated", _on_data_center_data_updated)
 		site.queue_free()
 	else:
 		return "Invalid building_type"
@@ -384,7 +399,11 @@ func _on_deepgram_message_received(message) -> void:
 		var world_state = get_world_state()
 		print("Prompt characters: ", $Deepgram.prompt.length())
 		print("World State characters: ", JSON.stringify(world_state).length())
-		$Deepgram.update_prompt(JSON.stringify(world_state))
+		if just_injected_count == 0:
+			$Deepgram.inject_user_message(JSON.stringify(world_state))
+			just_injected_count += 1
+		else:
+			just_injected_count -= 1
 
 		_clear_tts_audio()
 

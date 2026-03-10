@@ -1,14 +1,18 @@
 [gd_scene format=3 uid="uid://bls6qhp61hhmy"]
 
+[ext_resource type="Script" uid="uid://dbytbevm1bbtr" path="res://scenes/transmission_tower.gd" id="1_fpcqo"]
 [ext_resource type="Texture2D" uid="uid://cse6nepknve2w" path="res://assets/transmission_tower.png" id="1_ipy0m"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_fpcqo"]
 radius = 8.0
 
-[node name="TransmissionTower" type="Area2D" unique_id=476457026]
+[node name="TransmissionTower" type="Area2D" unique_id=476457026 groups=["TransmissionTower"]]
+script = ExtResource("1_fpcqo")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=184112135]
 texture = ExtResource("1_ipy0m")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1571571981]
 shape = SubResource("CircleShape2D_fpcqo")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
