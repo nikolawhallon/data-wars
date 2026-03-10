@@ -3,6 +3,7 @@ extends CharacterBody2D
 
 const SPEED = 300.0
 
+var team = null
 var target = Vector2(128.0, 128.0)
 
 func _physics_process(delta: float) -> void:
@@ -20,6 +21,6 @@ func _physics_process(delta: float) -> void:
 func _on_area_2d_body_entered(body: Node2D) -> void:
 	if body == self:
 		return
-	if body.is_in_group("SkunkDrone"):
-		body.queue_free()
-		queue_free()
+
+	body.queue_free()
+	queue_free()

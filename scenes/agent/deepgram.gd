@@ -128,6 +128,14 @@ func inject_user_message(content):
 	}
 	client.send_text(JSON.stringify(message))
 
+
+func update_prompt(new_prompt):
+	var message = {
+		"type": "UpdatePrompt",
+		"prompt": new_prompt
+	}
+	client.send_text(JSON.stringify(message))
+
 func _closed(was_clean = false):
 	print("Closed, clean: ", was_clean)
 	emit_signal("message_received", "connection to deepgram closed;")
@@ -225,9 +233,9 @@ func _on_microphone_audio_captured(mono_data) -> void:
 func send_audio(audio: PackedByteArray) -> void:
 	var offset = 0
 	while offset < audio.size():
-		var max = client.get_outbound_buffer_size()
+		var max_buffer_size = client.get_outbound_buffer_size()
 		var queued = client.get_current_outbound_buffered_amount()
-		var remaining = max - queued
+		var remaining = max_buffer_size - queued
 
 		if remaining <= 0:
 			print("WARNING")

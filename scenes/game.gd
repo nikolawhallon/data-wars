@@ -8,6 +8,8 @@ extends Node2D
 # * cell (optional), e.g. A1, C6, etc
 
 # Tuesday:
+# minerals + mining
+# initial extractors
 # function calls
 # * build buildings
 # * build units
@@ -27,9 +29,6 @@ extends Node2D
 
 # Monday:
 # Nikola:
-# have skunk works produce the skunk drones on a timer (no queues yet)
-# * producing
-# * time_remaining
 # Teams
 
 # Sam:
@@ -103,33 +102,31 @@ func _process(delta: float) -> void:
 			if rng.randf() < 0.5:
 				var skunk_works = load("res://scenes/skunk_works.tscn").instantiate()
 				water.add_child(skunk_works)
+				skunk_works.team = $Player.team
 				skunk_works.global_position = site.global_position
 				site.queue_free()
 			else:
 				var data_center = load("res://scenes/data_center.tscn").instantiate()
 				water.add_child(data_center)
+				data_center.team = $Player.team
 				data_center.global_position = site.global_position
+				data_center.connect("data_generated", _on_data_center_data_generated)
 				site.queue_free()
 			#break
 
 		var all_skunk_works = get_tree().get_nodes_in_group("SkunkWorks")
 		for skunk_works in all_skunk_works:
-			var skunk_drone = load("res://scenes/skunk_drone.tscn").instantiate()
-			skunk_drone.global_position = skunk_works.global_position
-			skunk_drone.target = $CellLabels.cell_label_to_pos("B2")
-			add_child(skunk_drone)
-
-			var data_drone = load("res://scenes/data_drone.tscn").instantiate()
-			data_drone.global_position = skunk_works.global_position
-			data_drone.target = $CellLabels.cell_label_to_pos("C3")
-			add_child(data_drone)
+			if rng.randf() < 0.5:
+				skunk_works.spawn_unit("skunk_drone")
+			else:
+				skunk_works.spawn_unit("data_drone")
 
 		var data_centers = get_tree().get_nodes_in_group("DataCenter")
 		for data_center in data_centers:
-			var spam_bot = load("res://scenes/spam_bot.tscn").instantiate()
-			spam_bot.global_position = data_center.global_position
-			spam_bot.target = Vector2(-128.0, -128.0)
-			add_child(spam_bot)
+			if $Player.data > 100:
+				$Player.data -= 100
+				$UICanvas/MarginContainer/HBoxContainer/Data.text = str($Player.data)
+				data_center.spawn_unit("spam_bot")
 
 	if Input.is_action_just_pressed("debug"):
 		for debug in get_tree().get_nodes_in_group("Debug"):
@@ -174,6 +171,9 @@ func get_world_state() -> Dictionary:
 	var skunk_works_array: Array = []
 	var data_center_array: Array = []
 	var skunk_drone_array: Array = []
+	var data_drone_array: Array = []
+	var spam_bot_array: Array = []
+	var extractor_array: Array = []
 
 	for water in get_tree().get_nodes_in_group("Water"):
 		var p: Vector2 = water.global_position
@@ -205,7 +205,8 @@ func get_world_state() -> Dictionary:
 				"x": p.x,
 				"y": p.y
 			},
-			"cell": $CellLabels.pos_to_cell_label(p)
+			"cell": $CellLabels.pos_to_cell_label(p),
+			"producing": skunk_works.producing
 		})
 
 	for data_center in get_tree().get_nodes_in_group("DataCenter"):
@@ -216,7 +217,8 @@ func get_world_state() -> Dictionary:
 				"x": p.x,
 				"y": p.y
 			},
-			"cell": $CellLabels.pos_to_cell_label(p)
+			"cell": $CellLabels.pos_to_cell_label(p),
+			"producing": data_center.producing
 		})
 
 	for skunk_drone in get_tree().get_nodes_in_group("SkunkDrone"):
@@ -229,6 +231,48 @@ func get_world_state() -> Dictionary:
 			},
 			"cell": $CellLabels.pos_to_cell_label(p)
 		})
+
+	for data_drone in get_tree().get_nodes_in_group("DataDrone"):
+		var p: Vector2 = data_drone.global_position
+		data_drone_array.append({
+			"id": int(data_drone.get_instance_id()),
+			"position": {
+				"x": p.x,
+				"y": p.y
+			},
+			"cell": $CellLabels.pos_to_cell_label(p)
+		})
+	
+	for spam_bot in get_tree().get_nodes_in_group("SpamBot"):
+		var p: Vector2 = spam_bot.global_position
+		spam_bot_array.append({
+			"id": int(spam_bot.get_instance_id()),
+			"position": {
+				"x": p.x,
+				"y": p.y
+			},
+			"cell": $CellLabels.pos_to_cell_label(p)
+		})
+		
+	for extractor in get_tree().get_nodes_in_group("Extractor"):
+		var p: Vector2 = extractor.global_position
+		extractor_array.append({
+			"id": int(extractor.get_instance_id()),
+			"position": {
+				"x": p.x,
+				"y": p.y
+			},
+			"cell": $CellLabels.pos_to_cell_label(p)
+		})
+
+	print(water_array.size())
+	print(sites_array.size())
+	print(skunk_works_array.size())
+	print(data_center_array.size())
+	print(skunk_drone_array.size())
+	print(data_drone_array.size())
+	print(spam_bot_array.size())
+	print(extractor_array.size())
 
 	var world_state = {
 		"world": {
@@ -247,10 +291,18 @@ func get_world_state() -> Dictionary:
 		"sites": sites_array,
 		"skunk_works": skunk_works_array,
 		"data_centers": data_center_array,
-		"skunk_drones": skunk_drone_array
+		"skunk_drones": skunk_drone_array,
+		"data_drones": data_drone_array,
+		"spam_bots": spam_bot_array,
+		"extractors": extractor_array
 	}
 
 	return world_state
+
+func _on_data_center_data_generated(team, amount):
+	if team == $Player.team:
+		$Player.data += amount
+		$UICanvas/MarginContainer/HBoxContainer/Data.text = str($Player.data)
 
 func _on_deepgram_message_received(message) -> void:
 	var data = JSON.parse_string(message)
@@ -284,24 +336,12 @@ func _on_deepgram_message_received(message) -> void:
 		print(data)
 	
 	if data.get("type") == "UserStartedSpeaking":
-		if just_injected_count == 0:
-			var world_state = get_world_state()
-			print("Prompt characters: ", $Deepgram.prompt.length())
-			print("World State characters: ", JSON.stringify(world_state).length())
+		var world_state = get_world_state()
+		print("Prompt characters: ", $Deepgram.prompt.length())
+		print("World State characters: ", JSON.stringify(world_state).length())
+		print(JSON.stringify(world_state))
+		$Deepgram.update_prompt(JSON.stringify(world_state))
 
-			$Deepgram.inject_user_message(JSON.stringify(world_state))
-			just_injected_count += 1
-
-			# the following shows how I might extract just pieces of the world state, eventually
-			# in fact, I might want to inject just the world state keys,
-			# and have the LLM decide which info it wants to retrieve
-			#for key in world_state.keys():
-			#	var sub_state = { key: world_state[key] }
-			#	print(key, " characters: ", JSON.stringify(sub_state).length())
-			#	$Deepgram.inject_user_message(JSON.stringify(sub_state))
-			#	just_injected_count += 1
-		else:
-			just_injected_count -= 1
 		_clear_tts_audio()
 
 func _clear_tts_audio() -> void:

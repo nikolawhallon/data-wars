@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://q1xyygateqac"]
+
+[ext_resource type="Script" uid="uid://cesoi4rv7uoyi" path="res://scenes/team.gd" id="1_hisic"]
+
+[node name="Team" type="Node" unique_id=1329451154]
+script = ExtResource("1_hisic")

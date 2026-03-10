@@ -4,9 +4,14 @@
 [ext_resource type="PackedScene" uid="uid://7p21h7lb5g1a" path="res://scenes/agent/deepgram.tscn" id="3_lnu2h"]
 [ext_resource type="PackedScene" uid="uid://bpi3iagfp8f3o" path="res://scenes/random_map.tscn" id="4_iywne"]
 [ext_resource type="PackedScene" uid="uid://wax5xqju7evu" path="res://scenes/cell_labels.tscn" id="4_lbhrr"]
+[ext_resource type="Texture2D" uid="uid://d0ond0cem3yfg" path="res://assets/data_icon.png" id="5_0tnpc"]
 [ext_resource type="PackedScene" uid="uid://cn0ioholkgnb2" path="res://scenes/label_8.tscn" id="5_iywne"]
+[ext_resource type="LabelSettings" uid="uid://ywhly2wm7c3b" path="res://resources/label_16.tres" id="6_dinhu"]
 [ext_resource type="Shader" uid="uid://bvlt4xw35vyu" path="res://scenes/palette_swap.gdshader" id="6_p57ef"]
+[ext_resource type="Texture2D" uid="uid://dehm66p6hd38g" path="res://assets/player_clicks_icon.png" id="7_kvuet"]
 [ext_resource type="Script" uid="uid://cqpspisasjoe2" path="res://scenes/palette_swap.gd" id="7_u5sy4"]
+[ext_resource type="Texture2D" uid="uid://dw0rjtta0e0ji" path="res://assets/enemy_clicks_icon.png" id="8_trtic"]
+[ext_resource type="PackedScene" uid="uid://q1xyygateqac" path="res://scenes/team.tscn" id="10_vtaks"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_u5sy4"]
 shader = ExtResource("6_p57ef")
@@ -31,14 +36,81 @@ limit_top = 0
 [node name="CellLabels" parent="." unique_id=888046892 instance=ExtResource("4_lbhrr")]
 z_index = 1
 
+[node name="UICanvas" type="CanvasLayer" parent="." unique_id=701779298]
+
+[node name="MarginContainer" type="MarginContainer" parent="UICanvas" unique_id=1420787755]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 16.0
+grow_horizontal = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UICanvas/MarginContainer" unique_id=1244686934]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="UICanvas/MarginContainer/HBoxContainer" unique_id=1271156654]
+layout_mode = 2
+texture = ExtResource("5_0tnpc")
+
+[node name="Data" type="Label" parent="UICanvas/MarginContainer/HBoxContainer" unique_id=997034171]
+layout_mode = 2
+text = "0"
+label_settings = ExtResource("6_dinhu")
+
+[node name="MarginContainer2" type="MarginContainer" parent="UICanvas" unique_id=934056363]
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UICanvas/MarginContainer2" unique_id=1486372560]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UICanvas/MarginContainer2/VBoxContainer" unique_id=657901898]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="UICanvas/MarginContainer2/VBoxContainer/HBoxContainer" unique_id=383509935]
+layout_mode = 2
+texture = ExtResource("7_kvuet")
+
+[node name="Label" type="Label" parent="UICanvas/MarginContainer2/VBoxContainer/HBoxContainer" unique_id=1119910899]
+layout_mode = 2
+text = "0"
+label_settings = ExtResource("6_dinhu")
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="UICanvas/MarginContainer2/VBoxContainer" unique_id=1045891827]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="UICanvas/MarginContainer2/VBoxContainer/HBoxContainer2" unique_id=1457211891]
+layout_mode = 2
+texture = ExtResource("8_trtic")
+
+[node name="Label" type="Label" parent="UICanvas/MarginContainer2/VBoxContainer/HBoxContainer2" unique_id=1259404286]
+layout_mode = 2
+text = "0"
+label_settings = ExtResource("6_dinhu")
+
 [node name="ChatCanvas" type="CanvasLayer" parent="." unique_id=96994790 groups=["Debug"]]
+offset = Vector2(0, 240)
+transform = Transform2D(1, 0, 0, 1, 0, 240)
 
 [node name="Label8" parent="ChatCanvas" unique_id=74538079 instance=ExtResource("5_iywne")]
 custom_minimum_size = Vector2(640, 480)
 offset_right = 640.0
 offset_bottom = 480.0
 autowrap_mode = 3
-max_lines_visible = 40
+max_lines_visible = 24
 
 [node name="PaletteSwapCanvas" type="CanvasLayer" parent="." unique_id=285679540]
 
@@ -50,6 +122,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("7_u5sy4")
+
+[node name="Player" parent="." unique_id=1329451154 instance=ExtResource("10_vtaks")]
+team = "player"
 
 [connection signal="binary_packet_received" from="Deepgram" to="." method="_on_deepgram_binary_packet_received"]
 [connection signal="message_received" from="Deepgram" to="." method="_on_deepgram_message_received"]
