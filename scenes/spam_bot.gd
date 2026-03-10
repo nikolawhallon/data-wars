@@ -4,7 +4,7 @@ extends CharacterBody2D
 const SPEED = 300.0
 
 var team = null
-var target = Vector2(128.0, 256.0)
+var target = null
 
 func _physics_process(delta: float) -> void:
 	if target == null:

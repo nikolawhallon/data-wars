@@ -200,6 +200,25 @@ func _connected(_proto):
 						},
 						"required": ["site_id", "building_type"]
 					}
+				},
+				{
+					"name": "build_unit",
+					"description": "Build a unit from a specific building on the map.",
+					"parameters": {
+						"type": "object",
+						"properties": {
+							"building_id": {
+								"type": "integer",
+								"description": "The id of the building that will produce the unit."
+							},
+							"unit_type": {
+								"type": "string",
+								"description": "The type of unit to create. Skunk Works can produce Data Drones and Skunk Drones, Data Centers can produce Spam Bots.",
+								"enum": ["data_drone", "skunk_drone", "spam_bot"]
+							}
+						},
+						"required": ["building_id", "unit_type"]
+					}
 				}
 				]
 			},

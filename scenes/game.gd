@@ -330,6 +330,16 @@ func build_building(site_id, building_type):
 	
 	return "Successfully constructed building"
 
+func build_unit(building_id, unit_type):
+	var building = instance_from_id(building_id)
+	if building == null:
+		return "No building with building_id " + str(building_id)
+
+	if not building.is_in_group("SkunkWorks") and not building.is_in_group("DataCenter"):
+		return "No building with building_id " + str(building_id)
+
+	return building.spawn_unit(unit_type)
+
 func _on_deepgram_message_received(message) -> void:
 	# TODO: the big TODO - parse the message to see
 	# if it's a function call, and if it is a function call,
@@ -340,10 +350,7 @@ func _on_deepgram_message_received(message) -> void:
 
 	# 1. build_building
 	
-	# 2.
-	# then we can do "build_unit" which takes as arguments
-	# a "building_id" amd a "unit_type" which is an enum of "data_drone", "skunk_drone",
-	# and "spam_bot"
+	# 2. build_unit
 
 	# 3.
 	# the next function might be "set target" which takes a "unit_id"
@@ -362,6 +369,10 @@ func _on_deepgram_message_received(message) -> void:
 			if function["name"] == "build_building":
 				var arguments = JSON.parse_string(function["arguments"])
 				var result = build_building(arguments["site_id"], arguments["building_type"])
+				$Deepgram.send_function_call_response(function["name"], result, function["id"])
+			elif function["name"] == "build_unit":
+				var arguments = JSON.parse_string(function["arguments"])
+				var result = build_unit(arguments["building_id"], arguments["unit_type"])
 				$Deepgram.send_function_call_response(function["name"], result, function["id"])
 	elif data.has("type") and data.has("role") and data.has("content"):
 		# we don't want to print the enormous World State
