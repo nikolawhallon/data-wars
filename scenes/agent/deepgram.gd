@@ -128,11 +128,19 @@ func inject_user_message(content):
 	}
 	client.send_text(JSON.stringify(message))
 
-
 func update_prompt(new_prompt):
 	var message = {
 		"type": "UpdatePrompt",
 		"prompt": new_prompt
+	}
+	client.send_text(JSON.stringify(message))
+
+func send_function_call_response(function_name, content, id):
+	var message = {
+		"type": "FunctionCallResponse",
+		"name": function_name,
+		"content": content,
+		"id": id
 	}
 	client.send_text(JSON.stringify(message))
 
@@ -172,7 +180,28 @@ func _connected(_proto):
 					"type": "open_ai",
 					"model": "gpt-4o"
 				},
-				"prompt": prompt
+				"prompt": prompt,
+				"functions": [
+				{
+					"name": "build_building",
+					"description": "Build a new building on a specified site on the map.",
+					"parameters": {
+						"type": "object",
+						"properties": {
+							"site_id": {
+								"type": "integer",
+								"description": "The id of an available site on the map."
+							},
+							"building_type": {
+								"type": "string",
+								"description": "The type of building to construct.",
+								"enum": ["skunk_works", "data_center"]
+							}
+						},
+						"required": ["site_id", "building_type"]
+					}
+				}
+				]
 			},
 			"speak": {
 				"provider": {

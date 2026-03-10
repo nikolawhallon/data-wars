@@ -304,18 +304,69 @@ func _on_data_center_data_generated(team, amount):
 		$Player.data += amount
 		$UICanvas/MarginContainer/HBoxContainer/Data.text = str($Player.data)
 
-func _on_deepgram_message_received(message) -> void:
-	var data = JSON.parse_string(message)
+func build_building(site_id, building_type):
+	var site = instance_from_id(site_id)
+	if site == null:
+		return "No Site with site_id " + str(site_id)
 
+	if not site.is_in_group("Site"):
+		return "No Site with site_id " + str(site_id)
+
+	var water = site.get_parent()
+	if building_type == "skunk_works":
+		var skunk_works = load("res://scenes/skunk_works.tscn").instantiate()
+		water.add_child(skunk_works)
+		skunk_works.team = $Player.team
+		skunk_works.global_position = site.global_position
+		site.queue_free()
+	elif building_type == "data_center":
+		var data_center = load("res://scenes/data_center.tscn").instantiate()
+		water.add_child(data_center)
+		data_center.team = $Player.team
+		data_center.global_position = site.global_position
+		site.queue_free()
+	else:
+		return "Invalid building_type"
+	
+	return "Successfully constructed building"
+
+func _on_deepgram_message_received(message) -> void:
+	# TODO: the big TODO - parse the message to see
+	# if it's a function call, and if it is a function call,
+	# execute the function here in Godot, and send the result
+	# back to Deepgram
+
+	# I think I can accomplish the game with only 3 functions:
+
+	# 1. build_building
+	
+	# 2.
+	# then we can do "build_unit" which takes as arguments
+	# a "building_id" amd a "unit_type" which is an enum of "data_drone", "skunk_drone",
+	# and "spam_bot"
+
+	# 3.
+	# the next function might be "set target" which takes a "unit_id"
+	# and either a "position" with "x" and "y" or a "cell" or a "target_id"
+
+	var data = JSON.parse_string(message)
+	
 	if not (data is Dictionary):
 		return
 
 	if data == null:
 		return
 
-	# we don't want to print the enormous World State
-	# that Deepgame will spit back out at us
-	if data.has("type") and data.has("role") and data.has("content"):
+	if data.has("type") and data["type"] == "FunctionCallRequest":
+		for function in data["functions"]:
+			if function["name"] == "build_building":
+				var arguments = JSON.parse_string(function["arguments"])
+				var result = build_building(arguments["site_id"], arguments["building_type"])
+				$Deepgram.send_function_call_response(function["name"], result, function["id"])
+	elif data.has("type") and data.has("role") and data.has("content"):
+		# we don't want to print the enormous World State
+		# that Deepgame will spit back out at us
+		# which is in JSON format
 		var content = data["content"]
 		var result = JSON.new().parse(content)
 		if result != OK:

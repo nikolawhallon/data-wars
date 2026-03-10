@@ -94,7 +94,7 @@ func generate():
 
 	var tile_size = Vector2($Walls.tile_set.tile_size)
 	var map_origin = Vector2($Walls.get_used_rect().position) * tile_size
-	var map_size = Vector2($Walls.get_used_rect().size) * tile_size
+	#var map_size = Vector2($Walls.get_used_rect().size) * tile_size
 
 	var water_number = 4
 	var waters = []
@@ -108,7 +108,7 @@ func generate():
 			if !is_ground_block(x, y, 1):
 				continue
 
-			var position = map_origin + tile_size / 2 + Vector2(x, y) * tile_size
+			var pos = map_origin + tile_size / 2 + Vector2(x, y) * tile_size
 			var collision = false
 			for other_water in waters:
 				if other_water != water:
@@ -118,7 +118,7 @@ func generate():
 			if collision:
 				continue
 				
-			water.global_position = position
+			water.global_position = pos
 			
 			if is_ground_block(x - 3, y, 1):
 				var site = load("res://scenes/site.tscn").instantiate()
