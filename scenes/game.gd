@@ -96,37 +96,7 @@ func _process(delta: float) -> void:
 	$Camera2D.global_position = Vector2(x, y)
 
 	if Input.is_action_just_pressed("test"):
-		var sites = get_tree().get_nodes_in_group("Site")
-		for site in sites:
-			var water = site.get_parent()
-			if rng.randf() < 0.5:
-				var skunk_works = load("res://scenes/skunk_works.tscn").instantiate()
-				water.add_child(skunk_works)
-				skunk_works.team = $Player.team
-				skunk_works.global_position = site.global_position
-				site.queue_free()
-			else:
-				var data_center = load("res://scenes/data_center.tscn").instantiate()
-				water.add_child(data_center)
-				data_center.team = $Player.team
-				data_center.global_position = site.global_position
-				data_center.connect("data_generated", _on_data_center_data_generated)
-				site.queue_free()
-			#break
-
-		var all_skunk_works = get_tree().get_nodes_in_group("SkunkWorks")
-		for skunk_works in all_skunk_works:
-			if rng.randf() < 0.5:
-				skunk_works.spawn_unit("skunk_drone")
-			else:
-				skunk_works.spawn_unit("data_drone")
-
-		var data_centers = get_tree().get_nodes_in_group("DataCenter")
-		for data_center in data_centers:
-			if $Player.data > 100:
-				$Player.data -= 100
-				$UICanvas/MarginContainer/HBoxContainer/Data.text = str($Player.data)
-				data_center.spawn_unit("spam_bot")
+		pass
 
 	if Input.is_action_just_pressed("debug"):
 		for debug in get_tree().get_nodes_in_group("Debug"):
@@ -299,9 +269,8 @@ func get_world_state() -> Dictionary:
 
 	return world_state
 
-func _on_data_center_data_generated(team, amount):
-	if team == $Player.team:
-		$Player.data += amount
+func _on_data_center_data_updated(team):
+	if team == $Player:
 		$UICanvas/MarginContainer/HBoxContainer/Data.text = str($Player.data)
 
 func build_building(site_id, building_type):
@@ -316,14 +285,15 @@ func build_building(site_id, building_type):
 	if building_type == "skunk_works":
 		var skunk_works = load("res://scenes/skunk_works.tscn").instantiate()
 		water.add_child(skunk_works)
-		skunk_works.team = $Player.team
+		skunk_works.team = $Player
 		skunk_works.global_position = site.global_position
 		site.queue_free()
 	elif building_type == "data_center":
 		var data_center = load("res://scenes/data_center.tscn").instantiate()
 		water.add_child(data_center)
-		data_center.team = $Player.team
+		data_center.team = $Player
 		data_center.global_position = site.global_position
+		data_center.connect("data_updated", _on_data_center_data_updated)
 		site.queue_free()
 	else:
 		return "Invalid building_type"
@@ -341,7 +311,6 @@ func build_unit(building_id, unit_type):
 	return building.spawn_unit(unit_type)
 
 func set_target(unit_id, target):
-	print("Executing the set_target function")
 	var unit = instance_from_id(unit_id)
 	if unit == null:
 		return "No unit with unit_id"
@@ -365,21 +334,6 @@ func set_target(unit_id, target):
 	return "Successfully set the target of the unit"
 
 func _on_deepgram_message_received(message) -> void:
-	# TODO: the big TODO - parse the message to see
-	# if it's a function call, and if it is a function call,
-	# execute the function here in Godot, and send the result
-	# back to Deepgram
-
-	# I think I can accomplish the game with only 3 functions:
-
-	# 1. build_building
-	
-	# 2. build_unit
-
-	# 3.
-	# the next function might be "set_target" which takes a "unit_id"
-	# and either a "position" with "x" and "y" or a "cell" (A1, B2, etc) or a "target_id"
-
 	var data = JSON.parse_string(message)
 	
 	if not (data is Dictionary):
@@ -413,10 +367,11 @@ func _on_deepgram_message_received(message) -> void:
 			if data["type"] == "ConversationText":
 				# TODO: this is really "debug" while
 				# most other labels are more "info"
-				$ChatCanvas/Label8.text += str(data["role"], ":")
-				$ChatCanvas/Label8.text += "\n"
+				if data["role"] == "user":
+					$ChatCanvas/Label8.text += str(data["role"], ":       ")
+				elif data["role"] == "assistant":
+					$ChatCanvas/Label8.text += str(data["role"], ":  ")
 				$ChatCanvas/Label8.text += str(data["content"])
-				$ChatCanvas/Label8.text += "\n"
 				$ChatCanvas/Label8.text += "\n"
 				var total_lines = $ChatCanvas/Label8.get_line_count()
 				var max_lines_visible = $ChatCanvas/Label8.max_lines_visible

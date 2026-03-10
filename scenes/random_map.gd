@@ -1,7 +1,7 @@
 extends Node2D
 
-@export var map_w            = 4 * 200 / 4
-@export var map_h            = 4 * 120 / 4
+@export var map_w            = 2 * 200 / 4
+@export var map_h            = 2 * 120 / 4
 @export var ground_seed      = 0.7
 @export var wall_condition   = 4
 @export var ground_condition = 4
@@ -96,7 +96,7 @@ func generate():
 	var map_origin = Vector2($Walls.get_used_rect().position) * tile_size
 	#var map_size = Vector2($Walls.get_used_rect().size) * tile_size
 
-	var water_number = 40
+	var water_number = 10
 	var waters = []
 	while water_number > 0:
 		var water = load("res://scenes/water.tscn").instantiate()
@@ -142,6 +142,35 @@ func generate():
 		water_number = water_number - 1
 		waters.append(water)
 
+	var transmission_tower_number = 10
+	var transmission_towers = []
+	while transmission_tower_number > 0:
+		var transmission_tower = load("res://scenes/transmission_tower.tscn").instantiate()
+		add_child(transmission_tower)
+
+		while true:
+			var x = rng.randi_range(1, map_w - 1)
+			var y = rng.randi_range(1, map_h - 1)
+			if !is_black(x, y):
+				continue
+
+			var pos = map_origin + tile_size / 2 + Vector2(x, y) * tile_size
+			var collision = false
+			for other_transmission_tower in transmission_towers:
+				if other_transmission_tower != transmission_tower:
+					if abs(other_transmission_tower.global_position.x - pos.x) < tile_size.x * 1:
+						if abs(other_transmission_tower.global_position.y - pos.y) < tile_size.y * 1:
+							collision = true
+			if collision:
+				continue
+				
+			transmission_tower.global_position = pos
+			
+			break
+			
+		transmission_tower_number = transmission_tower_number - 1
+		transmission_towers.append(transmission_tower)
+		
 func fill_wall():
 	for x in range(0, map_w):
 		for y in range(0, map_h):
@@ -226,6 +255,12 @@ func flood_fill(x, y):
 
 func is_ground(x, y):
 	if $Ground.get_cell_atlas_coords(Vector2i(x, y)) == GROUND:
+		return true
+
+	return false
+
+func is_black(x, y):
+	if $Walls.get_cell_atlas_coords(Vector2i(x, y)) == BLACK:
 		return true
 
 	return false

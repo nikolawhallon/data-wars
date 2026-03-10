@@ -1,8 +1,13 @@
 extends Sprite2D
 
 
+var rng = RandomNumberGenerator.new()
+
 var team = null
 var producing = null
+
+func _ready() -> void:
+	rng.randomize()
 
 func spawn_unit(type):
 	if producing:
@@ -17,12 +22,12 @@ func _on_unit_timer_timeout() -> void:
 	if producing == "skunk_drone":
 		var skunk_drone = load("res://scenes/skunk_drone.tscn").instantiate()
 		skunk_drone.team = team
-		skunk_drone.global_position = global_position
+		skunk_drone.global_position = global_position + Vector2(rng.randf_range(-64.0, 64.0), rng.randf_range(-64.0, 64.0))
 		get_tree().get_current_scene().add_child(skunk_drone)
 	elif producing == "data_drone":
 		var data_drone = load("res://scenes/data_drone.tscn").instantiate()
 		data_drone.team = team
-		data_drone.global_position = global_position
+		data_drone.global_position = global_position + Vector2(rng.randf_range(-64.0, 64.0), rng.randf_range(-64.0, 64.0))
 		get_tree().get_current_scene().add_child(data_drone)
 		
 	producing = null
