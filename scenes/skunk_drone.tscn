@@ -9,7 +9,7 @@ radius = 8.0
 [sub_resource type="CircleShape2D" id="CircleShape2D_at1my"]
 radius = 8.0
 
-[node name="SkunkDrone" type="CharacterBody2D" unique_id=2019636834 groups=["SkunkDrone"]]
+[node name="SkunkDrone" type="CharacterBody2D" unique_id=2019636834 groups=["SkunkDrone", "Unit"]]
 collision_mask = 0
 script = ExtResource("1_at1my")
 

@@ -9,7 +9,7 @@ radius = 8.0
 [sub_resource type="CircleShape2D" id="CircleShape2D_kljyq"]
 radius = 8.0
 
-[node name="Extractor" type="CharacterBody2D" unique_id=2056073613 groups=["Extractor"]]
+[node name="Extractor" type="CharacterBody2D" unique_id=2056073613 groups=["Extractor", "Unit"]]
 collision_mask = 0
 script = ExtResource("1_o7god")
 

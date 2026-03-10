@@ -219,6 +219,53 @@ func _connected(_proto):
 						},
 						"required": ["building_id", "unit_type"]
 					}
+				},
+				{
+					"name": "set_target",
+					"description": "Set the target for a unit, either by position, map cell, or another entity id.",
+					"parameters": {
+						"type": "object",
+						"properties": {
+							"unit_id": {
+							"type": "integer",
+								"description": "The id of the unit to command."
+							},
+							"target": {
+								"description": "The target specification.",
+								"oneOf": [
+								{
+									"type": "object",
+									"description": "Target a specific position.",
+									"properties": {
+										"x": { "type": "number", "description": "X coordinate." },
+										"y": { "type": "number", "description": "Y coordinate." }
+									},
+									"required": ["x", "y"]
+								},
+								{
+									"type": "object",
+									"description": "Target a board cell like A1, B2, etc.",
+									"properties": {
+										"cell": { "type": "string", "description": "Cell id like A1, B2, etc." }
+									},
+									"required": ["cell"]
+								},
+								{
+									"type": "object",
+									"description": "Target another entity by id.",
+									"properties": {
+										"target_id": {
+											"type": "integer",
+											"description": "The id of the object to target."
+										}
+									},
+									"required": ["target_id"]
+								}
+								]
+							}
+						},
+						"required": ["unit_id", "target"]
+					}
 				}
 				]
 			},

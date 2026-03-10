@@ -340,6 +340,30 @@ func build_unit(building_id, unit_type):
 
 	return building.spawn_unit(unit_type)
 
+func set_target(unit_id, target):
+	print("Executing the set_target function")
+	var unit = instance_from_id(unit_id)
+	if unit == null:
+		return "No unit with unit_id"
+	if not unit.is_in_group("Unit"):
+		return "No unit with unit_id"
+
+	if target.has("x") and target.has("y"):
+		unit.target = Vector2(target["x"], target["y"])
+	elif target.has("cell"):
+		if not $CellLabels.cell_label_to_pos(target["cell"]):
+			return "Invalid cell"
+		unit.target = $CellLabels.cell_label_to_pos(target["cell"])
+	elif target.has("target_id"):
+		var object = instance_from_id(target["target_id"])
+		if object == null:
+			return "No object with target_id"
+		unit.target = object
+	else:
+		return "No valid target specified"
+	
+	return "Successfully set the target of the unit"
+
 func _on_deepgram_message_received(message) -> void:
 	# TODO: the big TODO - parse the message to see
 	# if it's a function call, and if it is a function call,
@@ -353,8 +377,8 @@ func _on_deepgram_message_received(message) -> void:
 	# 2. build_unit
 
 	# 3.
-	# the next function might be "set target" which takes a "unit_id"
-	# and either a "position" with "x" and "y" or a "cell" or a "target_id"
+	# the next function might be "set_target" which takes a "unit_id"
+	# and either a "position" with "x" and "y" or a "cell" (A1, B2, etc) or a "target_id"
 
 	var data = JSON.parse_string(message)
 	
@@ -373,6 +397,10 @@ func _on_deepgram_message_received(message) -> void:
 			elif function["name"] == "build_unit":
 				var arguments = JSON.parse_string(function["arguments"])
 				var result = build_unit(arguments["building_id"], arguments["unit_type"])
+				$Deepgram.send_function_call_response(function["name"], result, function["id"])
+			elif function["name"] == "set_target":
+				var arguments = JSON.parse_string(function["arguments"])
+				var result = set_target(arguments["unit_id"], arguments["target"])
 				$Deepgram.send_function_call_response(function["name"], result, function["id"])
 	elif data.has("type") and data.has("role") and data.has("content"):
 		# we don't want to print the enormous World State
@@ -401,7 +429,6 @@ func _on_deepgram_message_received(message) -> void:
 		var world_state = get_world_state()
 		print("Prompt characters: ", $Deepgram.prompt.length())
 		print("World State characters: ", JSON.stringify(world_state).length())
-		print(JSON.stringify(world_state))
 		$Deepgram.update_prompt(JSON.stringify(world_state))
 
 		_clear_tts_audio()

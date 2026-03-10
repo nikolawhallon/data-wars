@@ -1,7 +1,7 @@
 extends Node2D
 
-@export var map_w            = 2 * 200 / 4
-@export var map_h            = 2 * 120 / 4
+@export var map_w            = 4 * 200 / 4
+@export var map_h            = 4 * 120 / 4
 @export var ground_seed      = 0.7
 @export var wall_condition   = 4
 @export var ground_condition = 4
@@ -96,7 +96,7 @@ func generate():
 	var map_origin = Vector2($Walls.get_used_rect().position) * tile_size
 	#var map_size = Vector2($Walls.get_used_rect().size) * tile_size
 
-	var water_number = 4
+	var water_number = 40
 	var waters = []
 	while water_number > 0:
 		var water = load("res://scenes/water.tscn").instantiate()
@@ -112,8 +112,8 @@ func generate():
 			var collision = false
 			for other_water in waters:
 				if other_water != water:
-					if abs(other_water.global_position.x - position.x) < tile_size.x * 9:
-						if abs(other_water.global_position.y - position.y) < tile_size.y * 9:
+					if abs(other_water.global_position.x - pos.x) < tile_size.x * 9:
+						if abs(other_water.global_position.y - pos.y) < tile_size.y * 9:
 							collision = true
 			if collision:
 				continue
