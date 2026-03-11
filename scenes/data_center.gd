@@ -9,6 +9,18 @@ var producing = null
 func _ready() -> void:
 	rng.randomize()
 
+func init(initial_team, initial_position):
+	global_position = initial_position
+	team = initial_team
+	
+	if team.team == "enemy":
+		var mat := $Sprite2D.material as ShaderMaterial
+
+		mat.set_shader_parameter("pal0", Color("#edb4a1"))
+		mat.set_shader_parameter("pal1", Color("#a96868"))
+		mat.set_shader_parameter("pal2", Color("#764462"))
+		mat.set_shader_parameter("pal3", Color("#2c2137"))
+
 func _on_water_timer_timeout() -> void:
 	var water = get_parent()
 	var consumed = water.decrement(1)
@@ -18,8 +30,7 @@ func _on_water_timer_timeout() -> void:
 func _on_unit_timer_timeout() -> void:
 	if producing == "spam_bot":
 		var spam_bot = load("res://scenes/spam_bot.tscn").instantiate()
-		spam_bot.team = team
-		spam_bot.global_position = global_position + Vector2(rng.randf_range(-64.0, 64.0), rng.randf_range(-64.0, 64.0))
+		spam_bot.init(team, global_position + Vector2(rng.randf_range(-64.0, 64.0), rng.randf_range(-64.0, 64.0)))
 		get_tree().get_current_scene().add_child(spam_bot)
 
 	producing = null

@@ -6,6 +6,18 @@ const SPEED = 300.0
 var team = null
 var target = null
 
+func init(initial_team, initial_position):
+	global_position = initial_position
+	team = initial_team
+	
+	if team.team == "enemy":
+		var mat := $Sprite2D.material as ShaderMaterial
+
+		mat.set_shader_parameter("pal0", Color("#edb4a1"))
+		mat.set_shader_parameter("pal1", Color("#a96868"))
+		mat.set_shader_parameter("pal2", Color("#764462"))
+		mat.set_shader_parameter("pal3", Color("#2c2137"))
+
 func _physics_process(delta: float) -> void:
 	var target_position = null
 
@@ -32,7 +44,12 @@ func _physics_process(delta: float) -> void:
 	velocity = direction * SPEED
 
 	move_and_slide()
-	
+
+	if velocity.x > 0:
+		$Sprite2D.flip_h = true
+	elif velocity.x < 0:
+		$Sprite2D.flip_h = false
+
 	if global_position.distance_to(target_position) < 16:
 		target = null
 

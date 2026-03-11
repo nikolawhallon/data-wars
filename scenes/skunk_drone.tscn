@@ -2,6 +2,14 @@
 
 [ext_resource type="Script" uid="uid://du0wtqhityta3" path="res://scenes/skunk_drone.gd" id="1_at1my"]
 [ext_resource type="Texture2D" uid="uid://bvoiiao0dhg7s" path="res://assets/skunk_drone.png" id="1_thsc2"]
+[ext_resource type="Shader" uid="uid://b8t74ow17sia1" path="res://scenes/inverse.gdshader" id="2_eb2ji"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_s7yx3"]
+shader = ExtResource("2_eb2ji")
+shader_parameter/pal0 = Color(0.1725, 0.1294, 0.2157, 1)
+shader_parameter/pal1 = Color(0.4627, 0.2667, 0.3843, 1)
+shader_parameter/pal2 = Color(0.6627, 0.4078, 0.4078, 1)
+shader_parameter/pal3 = Color(0.9294, 0.7059, 0.6314, 1)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_eb2ji"]
 radius = 8.0
@@ -14,6 +22,7 @@ collision_mask = 0
 script = ExtResource("1_at1my")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=322296492]
+material = SubResource("ShaderMaterial_s7yx3")
 texture = ExtResource("1_thsc2")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=911040943]

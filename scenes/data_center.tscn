@@ -1,9 +1,18 @@
 [gd_scene format=3 uid="uid://b3tp1of0u3u20"]
 
+[ext_resource type="Shader" uid="uid://b8t74ow17sia1" path="res://scenes/inverse.gdshader" id="1_0o2gg"]
 [ext_resource type="Texture2D" uid="uid://dngncol6c3k4a" path="res://assets/data_center.png" id="1_3870i"]
 [ext_resource type="Script" uid="uid://jykvj08xaccd" path="res://scenes/data_center.gd" id="2_brcna"]
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ii474"]
+shader = ExtResource("1_0o2gg")
+shader_parameter/pal0 = Color(0.1725, 0.1294, 0.2157, 1)
+shader_parameter/pal1 = Color(0.4627, 0.2667, 0.3843, 1)
+shader_parameter/pal2 = Color(0.6627, 0.4078, 0.4078, 1)
+shader_parameter/pal3 = Color(0.9294, 0.7059, 0.6314, 1)
+
 [node name="DataCenter" type="Sprite2D" unique_id=871493217 groups=["DataCenter"]]
+material = SubResource("ShaderMaterial_ii474")
 texture = ExtResource("1_3870i")
 script = ExtResource("2_brcna")
 

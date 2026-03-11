@@ -9,6 +9,18 @@ var producing = null
 func _ready() -> void:
 	rng.randomize()
 
+func init(initial_team, initial_position):
+	global_position = initial_position
+	team = initial_team
+	
+	if team.team == "enemy":
+		var mat := $Sprite2D.material as ShaderMaterial
+
+		mat.set_shader_parameter("pal0", Color("#edb4a1"))
+		mat.set_shader_parameter("pal1", Color("#a96868"))
+		mat.set_shader_parameter("pal2", Color("#764462"))
+		mat.set_shader_parameter("pal3", Color("#2c2137"))
+
 func spawn_unit(type):
 	if producing:
 		print("WARN - this Skunk Works is already producing a ", producing)
@@ -33,13 +45,11 @@ func spawn_unit(type):
 func _on_unit_timer_timeout() -> void:
 	if producing == "skunk_drone":
 		var skunk_drone = load("res://scenes/skunk_drone.tscn").instantiate()
-		skunk_drone.team = team
-		skunk_drone.global_position = global_position + Vector2(rng.randf_range(-64.0, 64.0), rng.randf_range(-64.0, 64.0))
+		skunk_drone.init(team, global_position + Vector2(rng.randf_range(-64.0, 64.0), rng.randf_range(-64.0, 64.0)))
 		get_tree().get_current_scene().add_child(skunk_drone)
 	elif producing == "data_drone":
 		var data_drone = load("res://scenes/data_drone.tscn").instantiate()
-		data_drone.team = team
-		data_drone.global_position = global_position + Vector2(rng.randf_range(-64.0, 64.0), rng.randf_range(-64.0, 64.0))
+		data_drone.init(team, global_position + Vector2(rng.randf_range(-64.0, 64.0), rng.randf_range(-64.0, 64.0)))
 		get_tree().get_current_scene().add_child(data_drone)
 		
 	producing = null

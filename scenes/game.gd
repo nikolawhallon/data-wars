@@ -84,19 +84,15 @@ func _ready() -> void:
 	var extractors_to_spawn = 4
 	while extractors_to_spawn > 0:
 		var extractor = load("res://scenes/extractor.tscn").instantiate()
-		extractor.team = $Player
-		extractor.global_position = Vector2(randf_range(64.0, 256.0), randf_range(64.0, 256.0))
+		extractor.init($Player, Vector2(randf_range(64.0, 256.0), randf_range(64.0, 256.0)))
 		add_child(extractor)
 		
 		extractors_to_spawn -= 1
 
 	var enemy_skunk_drones_to_spawn = 4
 	while enemy_skunk_drones_to_spawn > 0:
-		var skunk_drone = load("res://scenes/skunk_drone.tscn").instantiate()
-		skunk_drone.team = $Enemy
-		var x = randf_range(512.0, 1024.0)
-		var y = randf_range(512.0, 1024.0)
-		skunk_drone.global_position = Vector2(x, y)
+		var skunk_drone = load("res://scenes/spam_bot.tscn").instantiate()
+		skunk_drone.init($Enemy, Vector2(randf_range(512.0, 1024.0), randf_range(512.0, 1024.0)))
 		add_child(skunk_drone)
 		
 		enemy_skunk_drones_to_spawn -= 1
@@ -140,12 +136,11 @@ func _process(delta: float) -> void:
 		if extractor.team != $Player:
 			continue
 		player_extractor_number += 1
-
+	
 	var extractors_to_spawn = 4 - player_extractor_number
 	while extractors_to_spawn > 0:
 		var extractor = load("res://scenes/extractor.tscn").instantiate()
-		extractor.team = $Player
-		extractor.global_position = Vector2(randf_range(64.0, 256.0), randf_range(64.0, 256.0))
+		extractor.init($Player, Vector2(randf_range(64.0, 256.0), randf_range(64.0, 256.0)))
 		add_child(extractor)
 		
 		extractors_to_spawn -= 1
@@ -357,14 +352,12 @@ func build_building(site_id, building_type):
 	if building_type == "skunk_works":
 		var skunk_works = load("res://scenes/skunk_works.tscn").instantiate()
 		water.add_child(skunk_works)
-		skunk_works.team = $Player
-		skunk_works.global_position = site.global_position
+		skunk_works.init($Player, site.global_position)
 		site.queue_free()
 	elif building_type == "data_center":
 		var data_center = load("res://scenes/data_center.tscn").instantiate()
 		water.add_child(data_center)
-		data_center.team = $Player
-		data_center.global_position = site.global_position
+		data_center.init($Player, site.global_position)
 		site.queue_free()
 	else:
 		return "Invalid building_type"

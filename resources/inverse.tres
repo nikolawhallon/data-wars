@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://bwu2udjtslgc"]
+
+[ext_resource type="Shader" uid="uid://b8t74ow17sia1" path="res://scenes/inverse.gdshader" id="1_q1a1g"]
+
+[resource]
+shader = ExtResource("1_q1a1g")
+shader_parameter/pal0 = Color(0.1725, 0.1294, 0.2157, 1)
+shader_parameter/pal1 = Color(0.4627, 0.2667, 0.3843, 1)
+shader_parameter/pal2 = Color(0.6627, 0.4078, 0.4078, 1)
+shader_parameter/pal3 = Color(0.9294, 0.7059, 0.6314, 1)

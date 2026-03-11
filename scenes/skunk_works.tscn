@@ -1,9 +1,18 @@
 [gd_scene format=3 uid="uid://dkk7irbj0fklh"]
 
+[ext_resource type="Shader" uid="uid://b8t74ow17sia1" path="res://scenes/inverse.gdshader" id="1_c6i1a"]
 [ext_resource type="Texture2D" uid="uid://b3r36kuw472bu" path="res://assets/skunk_works.png" id="1_f1nbc"]
 [ext_resource type="Script" uid="uid://cv6mwm86lik40" path="res://scenes/skunk_works.gd" id="2_b0jxg"]
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_065em"]
+shader = ExtResource("1_c6i1a")
+shader_parameter/pal0 = Color(0.1725, 0.1294, 0.2157, 1)
+shader_parameter/pal1 = Color(0.4627, 0.2667, 0.3843, 1)
+shader_parameter/pal2 = Color(0.6627, 0.4078, 0.4078, 1)
+shader_parameter/pal3 = Color(0.9294, 0.7059, 0.6314, 1)
+
 [node name="SkunkWorks" type="Sprite2D" unique_id=857615151 groups=["SkunkWorks"]]
+material = SubResource("ShaderMaterial_065em")
 texture = ExtResource("1_f1nbc")
 script = ExtResource("2_b0jxg")
 
