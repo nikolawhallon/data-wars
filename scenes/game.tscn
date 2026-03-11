@@ -9,6 +9,7 @@
 [ext_resource type="LabelSettings" uid="uid://ywhly2wm7c3b" path="res://resources/label_16.tres" id="6_dinhu"]
 [ext_resource type="Shader" uid="uid://bvlt4xw35vyu" path="res://scenes/palette_swap.gdshader" id="6_p57ef"]
 [ext_resource type="Texture2D" uid="uid://dehm66p6hd38g" path="res://assets/player_clicks_icon.png" id="7_kvuet"]
+[ext_resource type="Texture2D" uid="uid://dgsvic7e7bb6" path="res://assets/minerals_icon.png" id="7_trtic"]
 [ext_resource type="Script" uid="uid://cqpspisasjoe2" path="res://scenes/palette_swap.gd" id="7_u5sy4"]
 [ext_resource type="Texture2D" uid="uid://dw0rjtta0e0ji" path="res://assets/enemy_clicks_icon.png" id="8_trtic"]
 [ext_resource type="PackedScene" uid="uid://q1xyygateqac" path="res://scenes/team.tscn" id="10_vtaks"]
@@ -51,11 +52,20 @@ theme_override_constants/margin_bottom = 8
 [node name="HBoxContainer" type="HBoxContainer" parent="UICanvas/MarginContainer" unique_id=1244686934]
 layout_mode = 2
 
-[node name="TextureRect" type="TextureRect" parent="UICanvas/MarginContainer/HBoxContainer" unique_id=1271156654]
+[node name="DataIcon" type="TextureRect" parent="UICanvas/MarginContainer/HBoxContainer" unique_id=1271156654]
 layout_mode = 2
 texture = ExtResource("5_0tnpc")
 
 [node name="Data" type="Label" parent="UICanvas/MarginContainer/HBoxContainer" unique_id=997034171]
+layout_mode = 2
+text = "0"
+label_settings = ExtResource("6_dinhu")
+
+[node name="MineralsIcon" type="TextureRect" parent="UICanvas/MarginContainer/HBoxContainer" unique_id=186397346]
+layout_mode = 2
+texture = ExtResource("7_trtic")
+
+[node name="Minerals" type="Label" parent="UICanvas/MarginContainer/HBoxContainer" unique_id=1935365029]
 layout_mode = 2
 text = "0"
 label_settings = ExtResource("6_dinhu")
@@ -130,3 +140,4 @@ team = "player"
 [connection signal="message_received" from="Deepgram" to="." method="_on_deepgram_message_received"]
 [connection signal="clicks_updated" from="Player" to="." method="_on_player_clicks_updated"]
 [connection signal="data_updated" from="Player" to="." method="_on_player_data_updated"]
+[connection signal="minerals_updated" from="Player" to="." method="_on_player_minerals_updated"]

@@ -96,7 +96,36 @@ func generate():
 	var map_origin = Vector2($Walls.get_used_rect().position) * tile_size
 	#var map_size = Vector2($Walls.get_used_rect().size) * tile_size
 
-	var water_number = 4
+	var mine_number = 4
+	var mines = []
+	while mine_number > 0:
+		var mine = load("res://scenes/mine.tscn").instantiate()
+		add_child(mine)
+
+		while true:
+			var x = rng.randi_range(1, map_w - 1)
+			var y = rng.randi_range(1, map_h - 1)
+			if !is_ground_block(x, y, 1):
+				continue
+
+			var pos = map_origin + tile_size / 2 + Vector2(x, y) * tile_size
+			var collision = false
+			for other_mine in mines:
+				if other_mine != mine:
+					if abs(other_mine.global_position.x - pos.x) < tile_size.x * 9:
+						if abs(other_mine.global_position.y - pos.y) < tile_size.y * 9:
+							collision = true
+			if collision:
+				continue
+				
+			mine.global_position = pos
+
+			break
+			
+		mine_number -= 1
+		mines.append(mine)
+
+	var water_number = 8
 	var waters = []
 	while water_number > 0:
 		var water = load("res://scenes/water.tscn").instantiate()
@@ -110,6 +139,10 @@ func generate():
 
 			var pos = map_origin + tile_size / 2 + Vector2(x, y) * tile_size
 			var collision = false
+			for mine in mines:
+				if abs(mine.global_position.x - pos.x) < tile_size.x * 9:
+					if abs(mine.global_position.y - pos.y) < tile_size.y * 9:
+							collision = true
 			for other_water in waters:
 				if other_water != water:
 					if abs(other_water.global_position.x - pos.x) < tile_size.x * 9:
@@ -117,7 +150,7 @@ func generate():
 							collision = true
 			if collision:
 				continue
-				
+
 			water.global_position = pos
 			
 			if is_ground_block(x - 3, y, 1):
@@ -142,7 +175,7 @@ func generate():
 		water_number = water_number - 1
 		waters.append(water)
 
-	var transmission_tower_number = 2
+	var transmission_tower_number = 4
 	var transmission_towers = []
 	while transmission_tower_number > 0:
 		var transmission_tower = load("res://scenes/transmission_tower.tscn").instantiate()

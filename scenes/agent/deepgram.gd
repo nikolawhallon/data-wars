@@ -14,8 +14,8 @@ var audio_buffer: PackedFloat32Array
 var client = WebSocketPeer.new()
 var ws_connected = false
 
-var DEEPGRAM_URL = "wss://agent.deepgram.com/v1/agent/converse"
-#var DEEPGRAM_URL = "ws://localhost:8000/v1/agent/converse"
+#var DEEPGRAM_URL = "wss://agent.deepgram.com/v1/agent/converse"
+var DEEPGRAM_URL = "ws://localhost:8000/v1/agent/converse"
 
 var prompt = """
 You are Deepgame, the voice-command assistant for the RTS game Data Wars. Interpret the player’s spoken commands and convert them into game function calls.
@@ -26,7 +26,7 @@ Rules:
 
     Use object IDs in function calls, but never say them aloud.
 
-    Keep responses short.
+    Keep responses short. Do not make any lists. When possible, reply in short clauses.
 
 Game summary:
 Two teams compete: Player and Enemy. The goal is to build Spam Bots and send them to Transmission Towers to earn points. Each Spam Bot that reaches a Transmission Tower gives 1 click, where clicks function as points. The game ends when no more Water remains on the map.
@@ -103,18 +103,19 @@ func inject_user_message(content):
 	client.send_text(JSON.stringify(message))
 
 func update_prompt(new_prompt):
+	var message = {
+		"type": "UpdatePrompt",
+		"prompt": new_prompt
+	}
+	client.send_text(JSON.stringify(message))
+
+func replace_prompt(new_prompt):
 	var first = {
 		"type": "ReplacePrompt",
-		"prompt": prompt + " - the following is the world state - " + new_prompt
+		"prompt": prompt + " - and here is the world state - " + new_prompt
 	}
 	client.send_text(JSON.stringify(first))
-
-	#var second = {
-	#	"type": "UpdatePrompt",
-	#	"prompt": new_prompt
-	#}
-	#client.send_text(JSON.stringify(second))
-
+	
 func send_function_call_response(function_name, content, id):
 	var message = {
 		"type": "FunctionCallResponse",

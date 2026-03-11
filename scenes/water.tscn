@@ -9,3 +9,4 @@ texture = ExtResource("1_bdk6y")
 script = ExtResource("2_p1n2c")
 
 [node name="Label8" parent="." unique_id=74538079 groups=["Info"] instance=ExtResource("3_p1n2c")]
+z_index = 1

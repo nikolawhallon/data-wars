@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://wr2c42ml2uv5"]
+
+[ext_resource type="Texture2D" uid="uid://ck6legrrr4md1" path="res://assets/mine.png" id="1_kqr42"]
+[ext_resource type="Script" uid="uid://kwquxmtmypy3" path="res://scenes/mine.gd" id="2_m55k0"]
+[ext_resource type="PackedScene" uid="uid://cn0ioholkgnb2" path="res://scenes/label_8.tscn" id="3_j4qwv"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_m55k0"]
+size = Vector2(48, 48)
+
+[node name="Mine" type="Area2D" unique_id=1470236212 groups=["Mine"]]
+script = ExtResource("2_m55k0")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1526714838]
+texture = ExtResource("1_kqr42")
+
+[node name="Label8" parent="." unique_id=74538079 groups=["Info"] instance=ExtResource("3_j4qwv")]
+z_index = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=401097865]
+shape = SubResource("RectangleShape2D_m55k0")

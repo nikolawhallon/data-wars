@@ -52,6 +52,11 @@ extends Node2D
 
 var rng = RandomNumberGenerator.new()
 
+# TODO: use this, so that we can destroy and remake as needed
+# will require checking for null before using the object
+# and setting up signals
+var deepgram = null
+
 var map_origin: Vector2
 var map_size: Vector2
 
@@ -79,6 +84,17 @@ func _ready() -> void:
 	$TtsPlayer.play()
 	tts_playback = $TtsPlayer.get_stream_playback()
 
+	var extractors_to_spawn = 4
+	while extractors_to_spawn > 0:
+		var extractor = load("res://scenes/extractor.tscn").instantiate()
+		extractor.team = $Player
+		var x = randf_range(64.0, 256.0)
+		var y = randf_range(64.0, 256.0)
+		extractor.global_position = Vector2(x, y)
+		add_child(extractor)
+		
+		extractors_to_spawn -= 1
+	
 	$Deepgram.initialize("asdf")
 
 func _process(delta: float) -> void:
@@ -136,6 +152,7 @@ func _unhandled_input(event):
 	$Camera2D.global_position = Vector2(x, y)
 
 func get_world_state() -> Dictionary:
+	var mine_array: Array = []
 	var water_array: Array = []
 	var site_array: Array = []
 	var transmission_tower_array: Array = []
@@ -145,6 +162,17 @@ func get_world_state() -> Dictionary:
 	var data_drone_array: Array = []
 	var spam_bot_array: Array = []
 	var extractor_array: Array = []
+
+	for mine in get_tree().get_nodes_in_group("Mine"):
+		var p: Vector2 = mine.global_position
+		mine_array.append({
+			"id": int(mine.get_instance_id()),
+			"position": {
+				"x": p.x,
+				"y": p.y
+			},
+			"cell": $CellLabels.pos_to_cell_label(p)
+		})
 
 	for water in get_tree().get_nodes_in_group("Water"):
 		var p: Vector2 = water.global_position
@@ -247,15 +275,6 @@ func get_world_state() -> Dictionary:
 			"cell": $CellLabels.pos_to_cell_label(p)
 		})
 
-	#print(water_array.size())
-	#print(sites_array.size())
-	#print(skunk_works_array.size())
-	#print(data_center_array.size())
-	#print(skunk_drone_array.size())
-	#print(data_drone_array.size())
-	#print(spam_bot_array.size())
-	#print(extractor_array.size())
-
 	var world_state = {
 		"world": {
 			"origin": {"x": map_origin.x, "y": map_origin.y},
@@ -269,6 +288,7 @@ func get_world_state() -> Dictionary:
 			"rows": $CellLabels.rows,
 			"cell_anchor": "center"
 		},
+		"mines": mine_array,
 		"waters": water_array,
 		"sites": site_array,
 		"transmission_towers": transmission_tower_array,
@@ -285,9 +305,11 @@ func get_world_state() -> Dictionary:
 func _on_player_data_updated():
 	$UICanvas/MarginContainer/HBoxContainer/Data.text = str($Player.data)
 
-
 func _on_player_clicks_updated():
 	$UICanvas/MarginContainer2/VBoxContainer/HBoxContainer/Clicks.text = str($Player.clicks)
+
+func _on_player_minerals_updated() -> void:
+	$UICanvas/MarginContainer/HBoxContainer/Minerals.text = str($Player.minerals)
 
 func build_building(site_id, building_type):
 	var site = instance_from_id(site_id)
@@ -399,11 +421,12 @@ func _on_deepgram_message_received(message) -> void:
 		var world_state = get_world_state()
 		print("Prompt characters: ", $Deepgram.prompt.length())
 		print("World State characters: ", JSON.stringify(world_state).length())
-		if just_injected_count == 0:
-			$Deepgram.inject_user_message(JSON.stringify(world_state))
-			just_injected_count += 1
-		else:
-			just_injected_count -= 1
+		#if just_injected_count == 0:
+		#	$Deepgram.inject_user_message($Deepgram.prompt)
+		#	just_injected_count += 1
+		#else:
+		#	just_injected_count -= 1
+		$Deepgram.replace_prompt(JSON.stringify(world_state))
 
 		_clear_tts_audio()
 

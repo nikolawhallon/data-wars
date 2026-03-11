@@ -1,6 +1,7 @@
 extends Node
 
 
+signal minerals_updated
 signal data_updated
 signal clicks_updated
 
