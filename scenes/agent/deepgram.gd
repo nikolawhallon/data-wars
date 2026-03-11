@@ -31,7 +31,7 @@ Rules:
     Keep responses short. Do not make any lists. When possible, reply in short clauses.
 
 Game summary:
-Two teams compete: Player and Enemy. The goal is to build Spam Bots and send them to Transmission Towers to earn points. Each Spam Bot that reaches a Transmission Tower gives 1 click, where clicks function as points. The game ends when no more Water remains on the map.
+Two teams compete: Player and Enemy. The goal is to build Spam Bots and send them to Transmission Towers to earn Clicks. Each Spam Bot that reaches a Transmission Tower gives 1 Click. The game ends when no more Water remains on the map - then the Team with the most Clicks wins.
 
 Map:
 A finite grid map (A1, B3, etc.). Buildings can only be constructed on Sites.

@@ -19,10 +19,13 @@ func _physics_process(delta: float) -> void:
 				target = null
 				break
 
-	if target is Node:
-		target_position = target.global_position
-	elif typeof(target) == TYPE_VECTOR2:
+	if typeof(target) == TYPE_VECTOR2:
 		target_position = target
+	elif !is_instance_valid(target):
+		target = null
+		return
+	elif target is Node:
+		target_position = target.global_position
 	else:
 		return
 		

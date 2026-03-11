@@ -44,6 +44,9 @@ extends Node2D
 # planning
 # better look-ups (not the full world state)
 
+var muted_texture  := preload("res://assets/muted.png")
+var unmuted_texture  := preload("res://assets/unmuted.png")
+
 var rng = RandomNumberGenerator.new()
 
 # TODO: use this, so that we can destroy and remake as needed
@@ -59,6 +62,8 @@ var tts_playback: AudioStreamGeneratorPlayback
 
 func _ready() -> void:
 	rng.randomize()
+	
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 
 	$CellLabels.init($RandomMap/Walls)
 	map_origin = $RandomMap/Walls.get_used_rect().position * $RandomMap/Walls.tile_set.tile_size
@@ -80,13 +85,22 @@ func _ready() -> void:
 	while extractors_to_spawn > 0:
 		var extractor = load("res://scenes/extractor.tscn").instantiate()
 		extractor.team = $Player
-		var x = randf_range(64.0, 256.0)
-		var y = randf_range(64.0, 256.0)
-		extractor.global_position = Vector2(x, y)
+		extractor.global_position = Vector2(randf_range(64.0, 256.0), randf_range(64.0, 256.0))
 		add_child(extractor)
 		
 		extractors_to_spawn -= 1
-	
+
+	var enemy_skunk_drones_to_spawn = 4
+	while enemy_skunk_drones_to_spawn > 0:
+		var skunk_drone = load("res://scenes/skunk_drone.tscn").instantiate()
+		skunk_drone.team = $Enemy
+		var x = randf_range(512.0, 1024.0)
+		var y = randf_range(512.0, 1024.0)
+		skunk_drone.global_position = Vector2(x, y)
+		add_child(skunk_drone)
+		
+		enemy_skunk_drones_to_spawn -= 1
+
 	$Deepgram.initialize("asdf")
 
 func _process(delta: float) -> void:
@@ -106,9 +120,9 @@ func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("mute"):
 		$Deepgram.muted = !$Deepgram.muted
 		if $Deepgram.muted:
-			$UICanvas/MarginContainer/VBoxContainer/HBoxContainer/Label.text = "T"
+			$UICanvas/MarginContainer/VBoxContainer/HBoxContainer/TextureRect.texture = muted_texture
 		else:
-			$UICanvas/MarginContainer/VBoxContainer/HBoxContainer/Label.text = "U"
+			$UICanvas/MarginContainer/VBoxContainer/HBoxContainer/TextureRect.texture = unmuted_texture
 
 	if Input.is_action_just_pressed("debug"):
 		for debug in get_tree().get_nodes_in_group("Debug"):
@@ -120,6 +134,21 @@ func _process(delta: float) -> void:
 
 	if Input.is_action_just_pressed("palette"):
 		$PaletteSwapCanvas/PaletteSwap.next_palette()
+
+	var player_extractor_number = 0
+	for extractor in get_tree().get_nodes_in_group("Extractor"):
+		if extractor.team != $Player:
+			continue
+		player_extractor_number += 1
+
+	var extractors_to_spawn = 4 - player_extractor_number
+	while extractors_to_spawn > 0:
+		var extractor = load("res://scenes/extractor.tscn").instantiate()
+		extractor.team = $Player
+		extractor.global_position = Vector2(randf_range(64.0, 256.0), randf_range(64.0, 256.0))
+		add_child(extractor)
+		
+		extractors_to_spawn -= 1
 
 func _unhandled_input(event):
 	# move the camera

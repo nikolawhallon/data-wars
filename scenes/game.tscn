@@ -11,6 +11,7 @@
 [ext_resource type="Texture2D" uid="uid://dehm66p6hd38g" path="res://assets/player_clicks_icon.png" id="7_kvuet"]
 [ext_resource type="Texture2D" uid="uid://dgsvic7e7bb6" path="res://assets/minerals_icon.png" id="7_trtic"]
 [ext_resource type="Script" uid="uid://cqpspisasjoe2" path="res://scenes/palette_swap.gd" id="7_u5sy4"]
+[ext_resource type="Texture2D" uid="uid://c5rne0i4cl2q1" path="res://assets/unmuted.png" id="8_ca42v"]
 [ext_resource type="Texture2D" uid="uid://dw0rjtta0e0ji" path="res://assets/enemy_clicks_icon.png" id="8_trtic"]
 [ext_resource type="LabelSettings" uid="uid://c6l2kjaqhfhq1" path="res://resources/label_8.tres" id="10_trtic"]
 [ext_resource type="PackedScene" uid="uid://q1xyygateqac" path="res://scenes/team.tscn" id="10_vtaks"]
@@ -82,10 +83,9 @@ layout_mode = 2
 text = "0"
 label_settings = ExtResource("6_dinhu")
 
-[node name="Label" type="Label" parent="UICanvas/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1116992025]
+[node name="TextureRect" type="TextureRect" parent="UICanvas/MarginContainer/VBoxContainer/HBoxContainer" unique_id=779609805]
 layout_mode = 2
-text = "U"
-label_settings = ExtResource("6_dinhu")
+texture = ExtResource("8_ca42v")
 
 [node name="Label" type="Label" parent="UICanvas/MarginContainer/VBoxContainer" unique_id=8868885]
 layout_mode = 2
@@ -182,6 +182,9 @@ script = ExtResource("7_u5sy4")
 
 [node name="Player" parent="." unique_id=1329451154 instance=ExtResource("10_vtaks")]
 team = "player"
+
+[node name="Enemy" parent="." unique_id=124131673 instance=ExtResource("10_vtaks")]
+team = "enemy"
 
 [connection signal="binary_packet_received" from="Deepgram" to="." method="_on_deepgram_binary_packet_received"]
 [connection signal="message_received" from="Deepgram" to="." method="_on_deepgram_message_received"]
