@@ -14,8 +14,8 @@ var audio_buffer: PackedFloat32Array
 var client = WebSocketPeer.new()
 var ws_connected = false
 
-#var DEEPGRAM_URL = "wss://agent.deepgram.com/v1/agent/converse"
-var DEEPGRAM_URL = "ws://localhost:8000/v1/agent/converse"
+var DEEPGRAM_URL = "wss://agent.deepgram.com/v1/agent/converse"
+#var DEEPGRAM_URL = "ws://localhost:8000/v1/agent/converse"
 
 var prompt = """
 You are Deepgame, the voice-command assistant for the RTS game Data Wars. Interpret the player’s spoken commands and convert them into game function calls.
@@ -80,8 +80,7 @@ func initialize(api_key):
 	$Microphone.recording = true
 
 	if OS.get_name() == "Web":
-		var protocols = PackedStringArray(["token", api_key])
-		client.handshake_headers = protocols
+		# THIS REQUIRES A MANUAL PATCH AFTER EXPORT
 		var err = client.connect_to_url(DEEPGRAM_URL)
 		if err != OK:
 			print("Unable to connect")
@@ -134,6 +133,7 @@ func _connected(_proto):
 	print("Connected to Deepgram!")
 	
 	var mix_rate = int(AudioServer.get_mix_rate())
+	print("mix_rate is: ", mix_rate)
 	
 	var config_message = {
 		"type": "Settings",

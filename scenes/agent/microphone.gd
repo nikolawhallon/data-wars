@@ -17,6 +17,10 @@ var previous_frame_was_recording = false
 # functions
 
 func _ready() -> void:
+	# Web build: mic handled by JS / browser, not by Godot's AudioEffectCapture.
+	if OS.get_name() == "Web":
+		return
+
 	# we want to create a new bus with the name "MicrophoneRecorderX"
 	# where "X" is an integer
 	# this loop ensures we do not accidentally grab a bus which already exists
@@ -45,6 +49,9 @@ func _ready() -> void:
 	play()
 
 func _process(_delta: float) -> void:
+	# On Web, there is no Godot-side mic capture: JS feeds Deepgram directly.
+	if OS.get_name() == "Web":
+		return
 	process_mic()
 
 func init_effect_capture():
