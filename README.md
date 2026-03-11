@@ -1,5 +1,15 @@
 # data-wars
 
+## Linux Builds
+
+The damn Linux export templates for Godot 4.6 seem to have some microphone bug. But the following got builds working:
+```
+cp /run/current-system/sw/bin/godot4.6 data-wars.x86_64
+chmod u+w data-wars.x86_64
+cat data-wars.pck >> data-wars.x86_64
+chmod +x data-wars.x86_64
+```
+
 ## Web Builds
 
 I made this game with the latest (at the time) Godot 4.6 - unfortunately, a lot of previous nice Web compatibility
