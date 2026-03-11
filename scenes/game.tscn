@@ -82,9 +82,15 @@ layout_mode = 2
 text = "0"
 label_settings = ExtResource("6_dinhu")
 
+[node name="Label" type="Label" parent="UICanvas/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1116992025]
+layout_mode = 2
+text = "U"
+label_settings = ExtResource("6_dinhu")
+
 [node name="Label" type="Label" parent="UICanvas/MarginContainer/VBoxContainer" unique_id=8868885]
 layout_mode = 2
 text = "(R) RECONNECT
+(M) MUTE/UNMUTE
 (P) PALETTE
 (I) INFO
 (D) DEBUG

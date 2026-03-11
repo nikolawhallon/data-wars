@@ -8,12 +8,6 @@ extends Node2D
 # * cell (optional), e.g. A1, C6, etc
 
 # Tuesday:
-# minerals + mining
-# initial extractors
-# function calls
-# * build buildings
-# * build units
-# * move units
 # phone input?
 
 # Wednesday:
@@ -109,8 +103,12 @@ func _process(delta: float) -> void:
 	var y = clamp($Camera2D.global_position.y, float($Camera2D.limit_top)+half_h, float($Camera2D.limit_bottom)-half_h)
 	$Camera2D.global_position = Vector2(x, y)
 
-	if Input.is_action_just_pressed("test"):
-		pass
+	if Input.is_action_just_pressed("mute"):
+		$Deepgram.muted = !$Deepgram.muted
+		if $Deepgram.muted:
+			$UICanvas/MarginContainer/VBoxContainer/HBoxContainer/Label.text = "T"
+		else:
+			$UICanvas/MarginContainer/VBoxContainer/HBoxContainer/Label.text = "U"
 
 	if Input.is_action_just_pressed("debug"):
 		for debug in get_tree().get_nodes_in_group("Debug"):
@@ -357,21 +355,21 @@ func build_unit(building_id, unit_type):
 
 	return building.spawn_unit(unit_type)
 
-func set_target(unit_id, target):
-	var unit = instance_from_id(unit_id)
+func set_target(arguments):
+	var unit = instance_from_id(arguments["unit_id"])
 	if unit == null:
 		return "No unit with unit_id"
 	if not unit.is_in_group("Unit"):
 		return "No unit with unit_id"
 
-	if target.has("x") and target.has("y"):
-		unit.target = Vector2(target["x"], target["y"])
-	elif target.has("cell"):
-		if not $CellLabels.cell_label_to_pos(target["cell"]):
+	if arguments.has("x") and arguments.has("y"):
+		unit.target = Vector2(arguments["x"], arguments["y"])
+	elif arguments.has("cell"):
+		if not $CellLabels.cell_label_to_pos(arguments["cell"]):
 			return "Invalid cell"
-		unit.target = $CellLabels.cell_label_to_pos(target["cell"])
-	elif target.has("target_id"):
-		var object = instance_from_id(target["target_id"])
+		unit.target = $CellLabels.cell_label_to_pos(arguments["cell"])
+	elif arguments.has("target_id"):
+		var object = instance_from_id(arguments["target_id"])
 		if object == null:
 			return "No object with target_id"
 		unit.target = object
@@ -381,7 +379,15 @@ func set_target(unit_id, target):
 	return "Successfully set the target of the unit"
 
 func _on_deepgram_message_received(message) -> void:
-	var data = JSON.parse_string(message)
+	var json := JSON.new()
+	var err := json.parse(message)
+
+	if err != OK:
+		print("JSON parse failed:", message)
+		print("Error:", json.get_error_message(), "at line", json.get_error_line())
+		return
+
+	var data = json.data
 	
 	if not (data is Dictionary):
 		return
@@ -404,9 +410,13 @@ func _on_deepgram_message_received(message) -> void:
 				var arguments = JSON.parse_string(function["arguments"])
 				var result = build_unit(arguments["building_id"], arguments["unit_type"])
 				$Deepgram.send_function_call_response(function["name"], result, function["id"])
-			elif function["name"] == "set_target":
+			elif function["name"] == "set_target_to_cell":
 				var arguments = JSON.parse_string(function["arguments"])
-				var result = set_target(arguments["unit_id"], arguments["target"])
+				var result = set_target(arguments)
+				$Deepgram.send_function_call_response(function["name"], result, function["id"])
+			elif function["name"] == "set_target_to_object":
+				var arguments = JSON.parse_string(function["arguments"])
+				var result = set_target(arguments)
 				$Deepgram.send_function_call_response(function["name"], result, function["id"])
 	elif data["type"] == "AgentStartedSpeaking":
 		$UICanvas/MarginContainer2/VBoxContainer/Latencies.text = "LAG: " + "%6.2f" % data["total_latency"]
@@ -428,7 +438,7 @@ func _on_deepgram_message_received(message) -> void:
 		var world_state = get_world_state()
 		print("Prompt characters: ", $Deepgram.prompt.length())
 		print("World State characters: ", JSON.stringify(world_state).length())
-		#$Deepgram.replace_prompt(JSON.stringify(world_state))
+		$Deepgram.replace_prompt(JSON.stringify(world_state))
 		_clear_tts_audio()
 
 func _clear_tts_audio() -> void:

@@ -10,6 +10,8 @@ signal binary_packet_received
 # we will buffer audio from the mic and send it out to Deepgram in reasonably sized chunks
 var audio_buffer: PackedFloat32Array
 
+var muted = false
+
 # the WebSocketClient which allows us to connect to Deepgram
 var client = WebSocketPeer.new()
 var ws_connected = false
@@ -159,7 +161,7 @@ func _connected(_proto):
 			"think": {
 				"provider": {
 					"type": "open_ai",
-					"model": "gpt-4.1-nano"
+					"model": "gpt-4o-mini"
 				},
 				"prompt": prompt,
 				"functions": [
@@ -202,60 +204,47 @@ func _connected(_proto):
 					}
 				},
 				{
-					"name": "set_target",
-					"description": "Set the target for a unit, either by position, map cell, or another entity id.",
+					"name": "set_target_to_object",
+					"description": "Set a unit's target to another object by id. Prefer this set target function always.",
 					"parameters": {
 						"type": "object",
 						"properties": {
 							"unit_id": {
-							"type": "integer",
+								"type": "integer",
 								"description": "The id of the unit to command."
 							},
-							"target": {
-								"description": "The target specification.",
-								"oneOf": [
-								{
-									"type": "object",
-									"description": "Target a specific position.",
-									"properties": {
-										"x": { "type": "number", "description": "X coordinate." },
-										"y": { "type": "number", "description": "Y coordinate." }
-									},
-									"required": ["x", "y"]
-								},
-								{
-									"type": "object",
-									"description": "Target a board cell like A1, B2, etc.",
-									"properties": {
-										"cell": { "type": "string", "description": "Cell id like A1, B2, etc." }
-									},
-									"required": ["cell"]
-								},
-								{
-									"type": "object",
-									"description": "Target another entity by id.",
-									"properties": {
-										"target_id": {
-											"type": "integer",
-											"description": "The id of the object to target."
-										}
-									},
-									"required": ["target_id"]
-								}
-								]
+							"target_id": {
+								"type": "integer",
+								"description": "The id of the object to target."
 							}
 						},
-						"required": ["unit_id", "target"]
+						"required": ["unit_id", "target_id"]
+					}
+				},
+				{
+					"name": "set_target_to_cell",
+					"description": "Set a unit's target to a map cell like A1 or B2. Only call this function if a cell was specified and no target object was specified.",
+					"parameters": {
+						"type": "object",
+						"properties": {
+							"unit_id": {
+								"type": "integer",
+								"description": "The id of the unit to command."
+							},
+							"cell": {
+								"type": "string",
+								"description": "Cell id like A1, B2, etc."
+							}
+						},
+						"required": ["unit_id", "cell"]
 					}
 				}
 				]
 			},
 			"speak": {
 				"provider": {
-					"type": "cartesia",
-					"model_id": "sonic-2",
-					"version": "2025-03-17",
-					"voice": { "mode": "id", "id": "694f9389-aac1-45b6-b726-9d9369183238" }
+					"type": "deepgram",
+					"model": "aura-asteria-en"
 				}
 			}
 		}
@@ -291,7 +280,11 @@ func _process(_delta):
 func _on_microphone_audio_captured(mono_data) -> void:
 	if !ws_connected:
 		return
-		
+
+	if muted:
+		for i in mono_data.size():
+			mono_data[i] = 0.0
+
 	audio_buffer.append_array(mono_data)
 	# TODO: consider using `set_encode_buffer_max_size(value)` to increase the packet size
 	# this might allow us to stream slower and possibly improve performance

@@ -3,6 +3,7 @@ extends ColorRect
 
 var palette_index = 0
 var palettes = [
+	# https://lospec.com/palette-list/rustic-gb
 	[
 		Color("#2c2137"),
 		Color("#764462"),
@@ -36,6 +37,20 @@ var palettes = [
 		Color("#9b6859"),
 		Color("#bebc6a"),
 		Color("#edf8c8")
+	],
+	# https://lospec.com/palette-list/2bit-demichrome
+	[
+		Color("#211e20"),
+		Color("#555568"),
+		Color("#a0a08b"),
+		Color("#e9efec")
+	],
+	# https://lospec.com/palette-list/red-poster
+	[
+		Color("#000000"),
+		Color("#a1281c"),
+		Color("#92938d"),
+		Color("#e8d6c0")
 	]
 ]
 
