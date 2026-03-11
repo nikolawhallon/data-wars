@@ -91,10 +91,10 @@ func _ready() -> void:
 
 	var enemy_skunk_drones_to_spawn = 4
 	while enemy_skunk_drones_to_spawn > 0:
-		var skunk_drone = load("res://scenes/spam_bot.tscn").instantiate()
+		var skunk_drone = load("res://scenes/skunk_drone.tscn").instantiate()
 		skunk_drone.init($Enemy, Vector2(randf_range(512.0, 1024.0), randf_range(512.0, 1024.0)))
 		add_child(skunk_drone)
-		
+
 		enemy_skunk_drones_to_spawn -= 1
 
 	$Deepgram.initialize("asdf")

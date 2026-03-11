@@ -12,10 +12,17 @@ func _ready() -> void:
 func init(initial_team, initial_position):
 	global_position = initial_position
 	team = initial_team
-	
-	if team.team == "enemy":
-		var mat := $Sprite2D.material as ShaderMaterial
 
+	$Sprite2D.material = $Sprite2D.material.duplicate()
+	var mat := $Sprite2D.material as ShaderMaterial
+
+	if team.team == "player":
+		mat.set_shader_parameter("pal0", Color("#2c2137"))
+		mat.set_shader_parameter("pal1", Color("#764462"))
+		mat.set_shader_parameter("pal2", Color("#a96868"))
+		mat.set_shader_parameter("pal3", Color("#edb4a1"))
+
+	if team.team == "enemy":
 		mat.set_shader_parameter("pal0", Color("#edb4a1"))
 		mat.set_shader_parameter("pal1", Color("#a96868"))
 		mat.set_shader_parameter("pal2", Color("#764462"))
