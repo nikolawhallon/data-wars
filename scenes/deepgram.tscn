@@ -4,3 +4,9 @@
 
 [node name="Deepgram" type="Node" unique_id=1228142323]
 script = ExtResource("1_prss2")
+
+[node name="KeepAliveTimer" type="Timer" parent="." unique_id=1870239752]
+wait_time = 5.0
+autostart = true
+
+[connection signal="timeout" from="KeepAliveTimer" to="." method="_on_keep_alive_timer_timeout"]

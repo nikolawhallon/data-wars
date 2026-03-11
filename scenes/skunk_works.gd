@@ -13,8 +13,8 @@ func init(initial_team, initial_position):
 	global_position = initial_position
 	team = initial_team
 	
-	$Sprite2D.material = $Sprite2D.material.duplicate()
-	var mat := $Sprite2D.material as ShaderMaterial
+	material = material.duplicate()
+	var mat := material as ShaderMaterial
 
 	if team.team == "player":
 		mat.set_shader_parameter("pal0", Color("#2c2137"))

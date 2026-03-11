@@ -32,3 +32,10 @@ shape = SubResource("CircleShape2D_02qki")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=696639359]
 shape = SubResource("CircleShape2D_31p4i")
+
+[node name="DataTimer" type="Timer" parent="." unique_id=1144735497]
+autostart = true
+
+[connection signal="area_entered" from="Area2D" to="." method="_on_area_2d_area_entered"]
+[connection signal="area_exited" from="Area2D" to="." method="_on_area_2d_area_exited"]
+[connection signal="timeout" from="DataTimer" to="." method="_on_data_timer_timeout"]

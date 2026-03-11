@@ -1,4 +1,4 @@
-extends Sprite2D
+extends Area2D
 
 
 var rng = RandomNumberGenerator.new()
@@ -50,12 +50,12 @@ func spawn_unit(type):
 	if type != "spam_bot":
 		return "Unable to build unit: Data Centers can only produce Spam Bots (spam_bot)"
 
-	if team.data < 10:
-		return "Spam Bots require 10 Data to build, Team does not have enough Data"
+	if team.data < 20:
+		return "Spam Bots require 20 Data to build, Team does not have enough Data"
 
-	team.data -= 10
+	team.data -= 20
 	team.data_updated.emit()
-	
+
 	producing = type
 	$UnitTimer.start()
 	return "Successfully started building unit"

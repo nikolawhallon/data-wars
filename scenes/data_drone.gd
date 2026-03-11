@@ -5,6 +5,7 @@ const SPEED = 300.0
 
 var team = null
 var target = null
+var data_center_at = null
 
 func init(initial_team, initial_position):
 	global_position = initial_position
@@ -25,7 +26,7 @@ func init(initial_team, initial_position):
 		mat.set_shader_parameter("pal2", Color("#764462"))
 		mat.set_shader_parameter("pal3", Color("#2c2137"))
 
-func _physics_process(delta: float) -> void:
+func _physics_process(_delta: float) -> void:
 	var target_position = null
 
 	if target == null:
@@ -61,3 +62,25 @@ func _physics_process(delta: float) -> void:
 
 	if global_position.distance_to(target_position) < 16:
 		target = null
+
+func collecting():
+	if data_center_at:
+		return true
+	else:
+		return false
+
+func _on_area_2d_area_entered(area: Area2D) -> void:
+	if area.is_in_group("DataCenter"):
+		data_center_at = area
+
+func _on_area_2d_area_exited(area: Area2D) -> void:
+	if area == data_center_at:
+		data_center_at = null
+
+func _on_data_timer_timeout() -> void:
+	if data_center_at != null:
+		var water = data_center_at.get_parent()
+		var consumed = water.decrement(1)
+		if team != null:
+			team.data += consumed
+			team.data_updated.emit()

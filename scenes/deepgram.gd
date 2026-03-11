@@ -20,7 +20,8 @@ var DEEPGRAM_URL = "wss://agent.deepgram.com/v1/agent/converse"
 #var DEEPGRAM_URL = "ws://localhost:8000/v1/agent/converse"
 
 var prompt = """
-You are Deepgame, the voice-command assistant for the RTS game Data Wars. Interpret the player’s spoken commands and convert them into game function calls.
+You are Deepgame, the voice-command assistant for the RTS game Data Wars. Interpret the team’s spoken commands and convert them into game function calls.
+You will either help the Player or the Enemy, help both of them equally well, to the best of your ability.
 
 Rules:
 
@@ -42,7 +43,7 @@ Buildings:
 
     Skunk Works: builds Data Drones and Skunk Drones
 
-All buildings drain Water from the map.
+Data Centers drain Water from the map to produce Data.
 
 Units:
 
@@ -54,7 +55,7 @@ Units:
 
     Spam Bot: scoring unit that can be dispatched to Transmission Towers
 
-Player commands may involve building structures, producing units, or moving units.
+Team commands may involve building structures, producing units, or moving units.
 """
 
 # functions
@@ -104,10 +105,10 @@ func update_prompt(new_prompt):
 	}
 	client.send_text(JSON.stringify(message))
 
-func replace_prompt(new_prompt):
+func replace_prompt(team, new_prompt):
 	var first = {
 		"type": "ReplacePrompt",
-		"prompt": prompt + " - and here is the world state - " + new_prompt
+		"prompt": "You are the agent for Team: " + team + "\n" + prompt + "\nHere is the World State:\n" + new_prompt
 	}
 	client.send_text(JSON.stringify(first))
 	
@@ -310,3 +311,10 @@ func send_audio(audio: PackedByteArray) -> void:
 		client.send(chunk)
 
 		offset += chunk_size
+
+func _on_keep_alive_timer_timeout() -> void:
+	if !ws_connected:
+		return
+
+	var message = {"type": "KeepAlive"}
+	client.send_text(JSON.stringify(message))

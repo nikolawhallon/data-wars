@@ -69,10 +69,10 @@ func _ready() -> void:
 	map_size = $RandomMap/Walls.get_used_rect().size * $RandomMap/Walls.tile_set.tile_size
 	$CellLabels.spawn_cell_labels()
 
-	$Camera2D.limit_left   = int(map_origin.x)
-	$Camera2D.limit_top    = int(map_origin.y)
-	$Camera2D.limit_right  = int(map_origin.x + map_size.x)
-	$Camera2D.limit_bottom = int(map_origin.y + map_size.y)
+	$Camera2D.limit_left   = int(map_origin.x - 120.0)
+	$Camera2D.limit_top    = int(map_origin.y - 120.0)
+	$Camera2D.limit_right  = int(map_origin.x + map_size.x + 120.0)
+	$Camera2D.limit_bottom = int(map_origin.y + map_size.y + 120.0)
 
 	tts_generator.mix_rate = AudioServer.get_mix_rate()
 	tts_generator.buffer_length = 60.0
@@ -82,25 +82,25 @@ func _ready() -> void:
 
 	var extractors_to_spawn = 4
 	while extractors_to_spawn > 0:
-		var extractor = load("res://scenes/extractor.tscn").instantiate()
-		extractor.init($Player, Vector2(randf_range(64.0, 256.0), randf_range(64.0, 256.0)))
-		add_child(extractor)
+		var player_extractor = load("res://scenes/extractor.tscn").instantiate()
+		player_extractor.init($Player, Vector2(randf_range(64.0, 256.0), randf_range(64.0, 256.0)))
+		add_child(player_extractor)
+		var enemy_extractor = load("res://scenes/extractor.tscn").instantiate()
+		enemy_extractor.init($Enemy, Vector2(randf_range(512.0, 1024.0), randf_range(512.0, 1024.0)))
+		add_child(enemy_extractor)
 		
 		extractors_to_spawn -= 1
-
-	var enemy_skunk_drones_to_spawn = 4
-	while enemy_skunk_drones_to_spawn > 0:
-		var skunk_drone = load("res://scenes/skunk_drone.tscn").instantiate()
-		skunk_drone.init($Enemy, Vector2(randf_range(512.0, 1024.0), randf_range(512.0, 1024.0)))
-		add_child(skunk_drone)
-
-		enemy_skunk_drones_to_spawn -= 1
 
 	player_deepgram = load("res://scenes/deepgram.tscn").instantiate()
 	player_deepgram.initialize(DEEPGRAM_API_KEY)
 	player_deepgram.connect("binary_packet_received", _on_player_deepgram_binary_packet_received)
 	player_deepgram.connect("message_received", _on_player_deepgram_message_received)
 	add_child(player_deepgram)
+
+	enemy_deepgram = load("res://scenes/deepgram.tscn").instantiate()
+	enemy_deepgram.initialize(DEEPGRAM_API_KEY)
+	enemy_deepgram.connect("message_received", _on_enemy_deepgram_message_received)
+	add_child(enemy_deepgram)
 
 	if OS.get_name() != "Web":
 		var microphone = load("res://scenes/microphone.tscn").instantiate()
@@ -150,7 +150,16 @@ func _process(delta: float) -> void:
 		player_deepgram.connect("binary_packet_received", _on_player_deepgram_binary_packet_received)
 		player_deepgram.connect("message_received", _on_player_deepgram_message_received)
 		add_child(player_deepgram)
-	
+
+		if is_instance_valid(enemy_deepgram):
+			enemy_deepgram.queue_free()
+			enemy_deepgram = null
+
+		enemy_deepgram = load("res://scenes/deepgram.tscn").instantiate()
+		enemy_deepgram.initialize(DEEPGRAM_API_KEY)
+		enemy_deepgram.connect("message_received", _on_enemy_deepgram_message_received)
+		add_child(enemy_deepgram)
+
 	var player_extractor_number = 0
 	for extractor in get_tree().get_nodes_in_group("Extractor"):
 		if extractor.team != $Player:
@@ -223,6 +232,7 @@ func get_world_state() -> Dictionary:
 	for skunk_works in get_tree().get_nodes_in_group("SkunkWorks"):
 		var p: Vector2 = skunk_works.global_position
 		skunk_works_array.append({
+			"team": skunk_works.team.team,
 			"id": int(skunk_works.get_instance_id()),
 			"position": {
 				"x": p.x,
@@ -235,6 +245,7 @@ func get_world_state() -> Dictionary:
 	for data_center in get_tree().get_nodes_in_group("DataCenter"):
 		var p: Vector2 = data_center.global_position
 		data_center_array.append({
+			"team": data_center.team.team,
 			"id": int(data_center.get_instance_id()),
 			"position": {
 				"x": p.x,
@@ -247,6 +258,7 @@ func get_world_state() -> Dictionary:
 	for skunk_drone in get_tree().get_nodes_in_group("SkunkDrone"):
 		var p: Vector2 = skunk_drone.global_position
 		skunk_drone_array.append({
+			"team": skunk_drone.team.team,
 			"id": int(skunk_drone.get_instance_id()),
 			"position": {
 				"x": p.x,
@@ -258,6 +270,7 @@ func get_world_state() -> Dictionary:
 	for data_drone in get_tree().get_nodes_in_group("DataDrone"):
 		var p: Vector2 = data_drone.global_position
 		data_drone_array.append({
+			"team": data_drone.team.team,
 			"id": int(data_drone.get_instance_id()),
 			"position": {
 				"x": p.x,
@@ -269,6 +282,7 @@ func get_world_state() -> Dictionary:
 	for spam_bot in get_tree().get_nodes_in_group("SpamBot"):
 		var p: Vector2 = spam_bot.global_position
 		spam_bot_array.append({
+			"team": spam_bot.team.team,
 			"id": int(spam_bot.get_instance_id()),
 			"position": {
 				"x": p.x,
@@ -280,12 +294,14 @@ func get_world_state() -> Dictionary:
 	for extractor in get_tree().get_nodes_in_group("Extractor"):
 		var p: Vector2 = extractor.global_position
 		extractor_array.append({
+			"team": extractor.team.team,
 			"id": int(extractor.get_instance_id()),
 			"position": {
 				"x": p.x,
 				"y": p.y
 			},
-			"cell": $CellLabels.pos_to_cell_label(p)
+			"cell": $CellLabels.pos_to_cell_label(p),
+			"mining": extractor.mining()
 		})
 
 	var world_state = {
@@ -303,8 +319,12 @@ func get_world_state() -> Dictionary:
 		},
 		"player_minerals": $Player.minerals,
 		"player_data": $Player.data,
+		"player_clicks": $Player.clicks,
+		"enemy_minerals": $Enemy.minerals,
+		"enemy_data": $Enemy.data,
+		"enemy_clicks": $Enemy.clicks,
 		"building_mineral_cost": 100,
-		"spam_bot_data_cost": 10,
+		"spam_bot_data_cost": 20,
 		"skunk_drone_mineral_cost": 50,
 		"data_drone_mineral_cost": 50,
 		"mines": mine_array,
@@ -325,12 +345,15 @@ func _on_player_data_updated():
 	$UICanvas/MarginContainer/VBoxContainer/HBoxContainer/Data.text = str($Player.data)
 
 func _on_player_clicks_updated():
-	$UICanvas/MarginContainer2/VBoxContainer/HBoxContainer/Clicks.text = str($Player.clicks)
+	$UICanvas/ClicksMarginContainer/VBoxContainer/Player/Clicks.text = str($Player.clicks)
+
+func _on_enemy_clicks_updated():
+	$UICanvas/ClicksMarginContainer/VBoxContainer/Enemy/Clicks.text = str($Enemy.clicks)
 
 func _on_player_minerals_updated() -> void:
 	$UICanvas/MarginContainer/VBoxContainer/HBoxContainer/Minerals.text = str($Player.minerals)
 
-func build_building(site_id, building_type):
+func build_building(team, site_id, building_type):
 	var site = instance_from_id(site_id)
 	if site == null:
 		return "No Site with site_id " + str(site_id)
@@ -338,29 +361,30 @@ func build_building(site_id, building_type):
 	if not site.is_in_group("Site"):
 		return "No Site with site_id " + str(site_id)
 
-	if $Player.minerals < 100:
+	if team.minerals < 100:
 		return "Buildings cost 100 minerals, Team does not have enough"
 
 	var water = site.get_parent()
 	if building_type == "skunk_works":
 		var skunk_works = load("res://scenes/skunk_works.tscn").instantiate()
 		water.add_child(skunk_works)
-		skunk_works.init($Player, site.global_position)
+		skunk_works.init(team, site.global_position)
 		site.queue_free()
 	elif building_type == "data_center":
 		var data_center = load("res://scenes/data_center.tscn").instantiate()
 		water.add_child(data_center)
-		data_center.init($Player, site.global_position)
+		data_center.init(team, site.global_position)
 		site.queue_free()
 	else:
 		return "Invalid building_type"
 
-	$Player.minerals -= 100
-	$Player.emit_signal("minerals_updated")
+	team.minerals -= 100
+	if team == $Player:
+		team.emit_signal("minerals_updated")
 
 	return "Successfully constructed building"
 
-func build_unit(building_id, unit_type):
+func build_unit(team, building_id, unit_type):
 	var building = instance_from_id(building_id)
 	if building == null:
 		return "No building with building_id " + str(building_id)
@@ -368,14 +392,20 @@ func build_unit(building_id, unit_type):
 	if not building.is_in_group("SkunkWorks") and not building.is_in_group("DataCenter"):
 		return "No building with building_id " + str(building_id)
 
+	if team != building.team:
+		return "That building belongs to a different Team"
+
 	return building.spawn_unit(unit_type)
 
-func set_target(arguments):
+func set_target(team, arguments):
 	var unit = instance_from_id(arguments["unit_id"])
 	if unit == null:
 		return "No unit with unit_id"
 	if not unit.is_in_group("Unit"):
 		return "No unit with unit_id"
+
+	if team != unit.team:
+		return "That unit belongs to a different Team"
 
 	if arguments.has("x") and arguments.has("y"):
 		unit.target = Vector2(arguments["x"], arguments["y"])
@@ -419,41 +449,39 @@ func _on_player_deepgram_message_received(message) -> void:
 		for function in data["functions"]:
 			if function["name"] == "build_building":
 				var arguments = JSON.parse_string(function["arguments"])
-				var result = build_building(arguments["site_id"], arguments["building_type"])
+				var result = build_building($Player, arguments["site_id"], arguments["building_type"])
 				player_deepgram.send_function_call_response(function["name"], result, function["id"])
 			elif function["name"] == "build_unit":
 				var arguments = JSON.parse_string(function["arguments"])
-				var result = build_unit(arguments["building_id"], arguments["unit_type"])
+				var result = build_unit($Player, arguments["building_id"], arguments["unit_type"])
 				player_deepgram.send_function_call_response(function["name"], result, function["id"])
 			elif function["name"] == "set_target_to_cell":
 				var arguments = JSON.parse_string(function["arguments"])
-				var result = set_target(arguments)
+				var result = set_target($Player, arguments)
 				player_deepgram.send_function_call_response(function["name"], result, function["id"])
 			elif function["name"] == "set_target_to_object":
 				var arguments = JSON.parse_string(function["arguments"])
-				var result = set_target(arguments)
+				var result = set_target($Player, arguments)
 				player_deepgram.send_function_call_response(function["name"], result, function["id"])
 	elif data["type"] == "AgentStartedSpeaking":
-		$UICanvas/MarginContainer2/VBoxContainer/Latencies.text = "LAG: " + "%6.2f" % data["total_latency"]
-		$UICanvas/MarginContainer2/VBoxContainer/Latencies.text += "\n"
-		$UICanvas/MarginContainer2/VBoxContainer/Latencies.text += "TTS: " + "%6.2f" % data["tts_latency"]
-		$UICanvas/MarginContainer2/VBoxContainer/Latencies.text += "\n"
-		$UICanvas/MarginContainer2/VBoxContainer/Latencies.text += "LLM: " + "%6.2f" % data["ttt_latency"]
+		$UICanvas/ClicksMarginContainer/VBoxContainer/Latencies.text = "LAG: " + "%6.2f" % data["total_latency"]
+		$UICanvas/ClicksMarginContainer/VBoxContainer/Latencies.text += "\n"
+		$UICanvas/ClicksMarginContainer/VBoxContainer/Latencies.text += "TTS: " + "%6.2f" % data["tts_latency"]
+		$UICanvas/ClicksMarginContainer/VBoxContainer/Latencies.text += "\n"
+		$UICanvas/ClicksMarginContainer/VBoxContainer/Latencies.text += "LLM: " + "%6.2f" % data["ttt_latency"]
 	elif data["type"] == "ConversationText":
-		$ChatCanvas/MarginContainer/Label8.text += str(data["role"], ":")
-		$ChatCanvas/MarginContainer/Label8.text += "\n"
-		$ChatCanvas/MarginContainer/Label8.text += str(data["content"])
-		$ChatCanvas/MarginContainer/Label8.text += "\n"
-		$ChatCanvas/MarginContainer/Label8.text += "\n"
-		var total_lines = $ChatCanvas/MarginContainer/Label8.get_line_count()
-		var max_lines_visible = $ChatCanvas/MarginContainer/Label8.max_lines_visible
+		$ChatCanvas/MarginContainer/HBoxContainer/Player.text += str(data["role"], ":")
+		$ChatCanvas/MarginContainer/HBoxContainer/Player.text += "\n"
+		$ChatCanvas/MarginContainer/HBoxContainer/Player.text += str(data["content"])
+		$ChatCanvas/MarginContainer/HBoxContainer/Player.text += "\n"
+		$ChatCanvas/MarginContainer/HBoxContainer/Player.text += "\n"
+		var total_lines = $ChatCanvas/MarginContainer/HBoxContainer/Player.get_line_count()
+		var max_lines_visible = $ChatCanvas/MarginContainer/HBoxContainer/Player.max_lines_visible
 		if total_lines > max_lines_visible:
-			$ChatCanvas/MarginContainer/Label8.lines_skipped = total_lines - max_lines_visible
+			$ChatCanvas/MarginContainer/HBoxContainer/Player.lines_skipped = total_lines - max_lines_visible
 	elif data.get("type") == "UserStartedSpeaking":
 		var world_state = get_world_state()
-		print("Prompt characters: ", player_deepgram.prompt.length())
-		print("World State characters: ", JSON.stringify(world_state).length())
-		player_deepgram.replace_prompt(JSON.stringify(world_state))
+		player_deepgram.replace_prompt($Player.team, JSON.stringify(world_state))
 		_clear_tts_audio()
 
 func _clear_tts_audio() -> void:
@@ -490,3 +518,71 @@ func _on_player_deepgram_binary_packet_received(audio) -> void:
 func _on_microphone_audio_captured(mono_data) -> void:
 	if player_deepgram != null:
 		player_deepgram.forward_microphone_audio(mono_data)
+
+func _on_enemy_deepgram_message_received(message) -> void:
+	print("Enemy Deepgram: " + message)
+
+	var json := JSON.new()
+	var err := json.parse(message)
+
+	if err != OK:
+		print("JSON parse failed:", message)
+		print("Error:", json.get_error_message(), "at line", json.get_error_line())
+		return
+
+	var data = json.data
+	
+	if not (data is Dictionary):
+		return
+
+	if data == null:
+		return
+
+	if not data.has("type"):
+		return
+	
+	if data["type"] == "FunctionCallRequest":
+		for function in data["functions"]:
+			if function["name"] == "build_building":
+				var arguments = JSON.parse_string(function["arguments"])
+				var result = build_building($Enemy, arguments["site_id"], arguments["building_type"])
+				enemy_deepgram.send_function_call_response(function["name"], result, function["id"])
+			elif function["name"] == "build_unit":
+				var arguments = JSON.parse_string(function["arguments"])
+				var result = build_unit($Enemy, arguments["building_id"], arguments["unit_type"])
+				enemy_deepgram.send_function_call_response(function["name"], result, function["id"])
+			elif function["name"] == "set_target_to_cell":
+				var arguments = JSON.parse_string(function["arguments"])
+				var result = set_target($Enemy, arguments)
+				enemy_deepgram.send_function_call_response(function["name"], result, function["id"])
+			elif function["name"] == "set_target_to_object":
+				var arguments = JSON.parse_string(function["arguments"])
+				var result = set_target($Enemy, arguments)
+				enemy_deepgram.send_function_call_response(function["name"], result, function["id"])
+	elif data["type"] == "ConversationText":
+		$ChatCanvas/MarginContainer/HBoxContainer/Enemy.text += str(data["role"], ":")
+		$ChatCanvas/MarginContainer/HBoxContainer/Enemy.text += "\n"
+		$ChatCanvas/MarginContainer/HBoxContainer/Enemy.text += str(data["content"])
+		$ChatCanvas/MarginContainer/HBoxContainer/Enemy.text += "\n"
+		$ChatCanvas/MarginContainer/HBoxContainer/Enemy.text += "\n"
+		var total_lines = $ChatCanvas/MarginContainer/HBoxContainer/Enemy.get_line_count()
+		var max_lines_visible = $ChatCanvas/MarginContainer/HBoxContainer/Enemy.max_lines_visible
+		if total_lines > max_lines_visible:
+			$ChatCanvas/MarginContainer/HBoxContainer/Enemy.lines_skipped = total_lines - max_lines_visible
+		if data["role"] == "assistant":
+			$EnemyDecider.push_assistant_message(data["content"])
+
+func _on_enemy_timer_timeout() -> void:
+	if enemy_deepgram:
+		var world_state = get_world_state()
+		$EnemyDecider.make_decision(world_state)
+
+func _on_enemy_decider_decision_made(command: String) -> void:
+	print("Enemy made a decision: " + command)
+	if enemy_deepgram:
+		var world_state = get_world_state()
+		enemy_deepgram.replace_prompt($Enemy.team, JSON.stringify(world_state))
+		enemy_deepgram.inject_user_message(command)
+
+func _on_enemy_decider_decision_failed(error: String) -> void:
+	print("Enemy failed to make a decision: " + error)
