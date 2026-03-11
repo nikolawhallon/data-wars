@@ -11,7 +11,7 @@ script = ExtResource("2_brcna")
 autostart = true
 
 [node name="UnitTimer" type="Timer" parent="." unique_id=1038254332]
-wait_time = 3.0
+wait_time = 10.0
 
 [connection signal="timeout" from="WaterTimer" to="." method="_on_water_timer_timeout"]
 [connection signal="timeout" from="UnitTimer" to="." method="_on_unit_timer_timeout"]

@@ -14,6 +14,18 @@ func spawn_unit(type):
 		print("WARN - this Skunk Works is already producing a ", producing)
 		return "Unable to build unit: Data Center alreading producing a unit"
 
+	if type != "skunk_drone" and type != "data_drone":
+		return "Unable to built unit: Skunk Works can only produce Skunk Drones (skunk_drone) and Data Drones (data_drone)"
+
+	if team == null:
+		return "Unable to build unit: this Skunk Works is not associated with a Team!"
+
+	if team.minerals < 50:
+		return "Drones require 50 Minerals to build, Team does not have enough Minerals"
+
+	team.minerals -= 50
+	team.minerals_updated.emit()
+
 	producing = type
 	$UnitTimer.start()
 	return "Successfully building unit"

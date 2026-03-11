@@ -319,6 +319,9 @@ func build_building(site_id, building_type):
 	if not site.is_in_group("Site"):
 		return "No Site with site_id " + str(site_id)
 
+	if $Player.minerals < 100:
+		return "Buildings cost 100 minerals, Team does not have enough"
+
 	var water = site.get_parent()
 	if building_type == "skunk_works":
 		var skunk_works = load("res://scenes/skunk_works.tscn").instantiate()
@@ -334,7 +337,10 @@ func build_building(site_id, building_type):
 		site.queue_free()
 	else:
 		return "Invalid building_type"
-	
+
+	$Player.minerals -= 100
+	$Player.emit_signal("minerals_updated")
+
 	return "Successfully constructed building"
 
 func build_unit(building_id, unit_type):
@@ -402,13 +408,10 @@ func _on_deepgram_message_received(message) -> void:
 		if result != OK:
 			print(data)
 			if data["type"] == "ConversationText":
-				# TODO: this is really "debug" while
-				# most other labels are more "info"
-				if data["role"] == "user":
-					$ChatCanvas/Label8.text += str(data["role"], ":       ")
-				elif data["role"] == "assistant":
-					$ChatCanvas/Label8.text += str(data["role"], ":  ")
+				$ChatCanvas/Label8.text += str(data["role"], ":")
+				$ChatCanvas/Label8.text += "\n"
 				$ChatCanvas/Label8.text += str(data["content"])
+				$ChatCanvas/Label8.text += "\n"
 				$ChatCanvas/Label8.text += "\n"
 				var total_lines = $ChatCanvas/Label8.get_line_count()
 				var max_lines_visible = $ChatCanvas/Label8.max_lines_visible

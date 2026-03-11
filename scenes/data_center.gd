@@ -29,12 +29,15 @@ func spawn_unit(type):
 		print("WARN - this Data Center is already producing a ", producing)
 		return "Unable to build unit: Data Center alreading producing a unit"
 
+	if type != "spam_bot":
+		return "Unable to build unit: Data Centers can only produce Spam Bots (spam_bot)"
+
 	if team.data < 10:
-		return "Unable to build unit: not enough Data available - try again later"
+		return "Spam Bots require 10 Data to build, Team does not have enough Data"
 
 	team.data -= 10
 	team.data_updated.emit()
 	
 	producing = type
 	$UnitTimer.start()
-	return "Successfully building unit"
+	return "Successfully started building unit"
