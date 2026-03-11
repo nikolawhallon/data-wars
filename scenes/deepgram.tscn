@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://7p21h7lb5g1a"]
+
+[ext_resource type="Script" uid="uid://ddbi4jlw18mtc" path="res://scenes/deepgram.gd" id="1_prss2"]
+
+[node name="Deepgram" type="Node" unique_id=1228142323]
+script = ExtResource("1_prss2")

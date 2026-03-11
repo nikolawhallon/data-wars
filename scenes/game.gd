@@ -49,10 +49,9 @@ var unmuted_texture  := preload("res://assets/unmuted.png")
 
 var rng = RandomNumberGenerator.new()
 
-# TODO: use this, so that we can destroy and remake as needed
-# will require checking for null before using the object
-# and setting up signals
-var deepgram = null
+const DEEPGRAM_API_KEY = "asdf"
+var player_deepgram = null
+var enemy_deepgram = null
 
 var map_origin: Vector2
 var map_size: Vector2
@@ -97,7 +96,17 @@ func _ready() -> void:
 
 		enemy_skunk_drones_to_spawn -= 1
 
-	$Deepgram.initialize("asdf")
+	player_deepgram = load("res://scenes/deepgram.tscn").instantiate()
+	player_deepgram.initialize(DEEPGRAM_API_KEY)
+	player_deepgram.connect("binary_packet_received", _on_player_deepgram_binary_packet_received)
+	player_deepgram.connect("message_received", _on_player_deepgram_message_received)
+	add_child(player_deepgram)
+
+	if OS.get_name() != "Web":
+		var microphone = load("res://scenes/microphone.tscn").instantiate()
+		microphone.connect("audio_captured", _on_microphone_audio_captured)
+		microphone.recording = true
+		add_child(microphone)
 
 func _process(delta: float) -> void:
 	# move the camera
@@ -114,8 +123,8 @@ func _process(delta: float) -> void:
 	$Camera2D.global_position = Vector2(x, y)
 
 	if Input.is_action_just_pressed("mute"):
-		$Deepgram.muted = !$Deepgram.muted
-		if $Deepgram.muted:
+		player_deepgram.muted = !player_deepgram.muted
+		if player_deepgram.muted:
 			$UICanvas/MarginContainer/VBoxContainer/HBoxContainer/TextureRect.texture = muted_texture
 		else:
 			$UICanvas/MarginContainer/VBoxContainer/HBoxContainer/TextureRect.texture = unmuted_texture
@@ -131,6 +140,17 @@ func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("palette"):
 		$PaletteSwapCanvas/PaletteSwap.next_palette()
 
+	if Input.is_action_just_pressed("reconnect"):
+		if is_instance_valid(player_deepgram):
+			player_deepgram.queue_free()
+			player_deepgram = null
+
+		player_deepgram = load("res://scenes/deepgram.tscn").instantiate()
+		player_deepgram.initialize(DEEPGRAM_API_KEY)
+		player_deepgram.connect("binary_packet_received", _on_player_deepgram_binary_packet_received)
+		player_deepgram.connect("message_received", _on_player_deepgram_message_received)
+		add_child(player_deepgram)
+	
 	var player_extractor_number = 0
 	for extractor in get_tree().get_nodes_in_group("Extractor"):
 		if extractor.team != $Player:
@@ -142,34 +162,7 @@ func _process(delta: float) -> void:
 		var extractor = load("res://scenes/extractor.tscn").instantiate()
 		extractor.init($Player, Vector2(randf_range(64.0, 256.0), randf_range(64.0, 256.0)))
 		add_child(extractor)
-		
 		extractors_to_spawn -= 1
-
-func _unhandled_input(event):
-	# move the camera
-	if event is InputEventMouseButton and event.is_pressed():
-		var step = 60.0
-
-		if "factor" in event:
-			step *= float(event.factor)
-
-		match event.button_index:
-			MOUSE_BUTTON_WHEEL_UP:
-				$Camera2D.position += Vector2(0, -step)
-			MOUSE_BUTTON_WHEEL_DOWN:
-				$Camera2D.position += Vector2(0, step)
-			MOUSE_BUTTON_WHEEL_LEFT:
-				$Camera2D.position += Vector2(-step, 0)
-			MOUSE_BUTTON_WHEEL_RIGHT:
-				$Camera2D.position += Vector2(step, 0)
-
-	# clamp the camera
-	var viewport_size = get_viewport().get_visible_rect().size
-	var half_w = viewport_size.x * 0.5 * $Camera2D.zoom.x
-	var half_h = viewport_size.y * 0.5 * $Camera2D.zoom.y
-	var x = clamp($Camera2D.global_position.x, float($Camera2D.limit_left)+half_w, float($Camera2D.limit_right)-half_w)
-	var y = clamp($Camera2D.global_position.y, float($Camera2D.limit_top)+half_h, float($Camera2D.limit_bottom)-half_h)
-	$Camera2D.global_position = Vector2(x, y)
 
 func get_world_state() -> Dictionary:
 	var mine_array: Array = []
@@ -400,7 +393,7 @@ func set_target(arguments):
 	
 	return "Successfully set the target of the unit"
 
-func _on_deepgram_message_received(message) -> void:
+func _on_player_deepgram_message_received(message) -> void:
 	var json := JSON.new()
 	var err := json.parse(message)
 
@@ -427,19 +420,19 @@ func _on_deepgram_message_received(message) -> void:
 			if function["name"] == "build_building":
 				var arguments = JSON.parse_string(function["arguments"])
 				var result = build_building(arguments["site_id"], arguments["building_type"])
-				$Deepgram.send_function_call_response(function["name"], result, function["id"])
+				player_deepgram.send_function_call_response(function["name"], result, function["id"])
 			elif function["name"] == "build_unit":
 				var arguments = JSON.parse_string(function["arguments"])
 				var result = build_unit(arguments["building_id"], arguments["unit_type"])
-				$Deepgram.send_function_call_response(function["name"], result, function["id"])
+				player_deepgram.send_function_call_response(function["name"], result, function["id"])
 			elif function["name"] == "set_target_to_cell":
 				var arguments = JSON.parse_string(function["arguments"])
 				var result = set_target(arguments)
-				$Deepgram.send_function_call_response(function["name"], result, function["id"])
+				player_deepgram.send_function_call_response(function["name"], result, function["id"])
 			elif function["name"] == "set_target_to_object":
 				var arguments = JSON.parse_string(function["arguments"])
 				var result = set_target(arguments)
-				$Deepgram.send_function_call_response(function["name"], result, function["id"])
+				player_deepgram.send_function_call_response(function["name"], result, function["id"])
 	elif data["type"] == "AgentStartedSpeaking":
 		$UICanvas/MarginContainer2/VBoxContainer/Latencies.text = "LAG: " + "%6.2f" % data["total_latency"]
 		$UICanvas/MarginContainer2/VBoxContainer/Latencies.text += "\n"
@@ -458,9 +451,9 @@ func _on_deepgram_message_received(message) -> void:
 			$ChatCanvas/MarginContainer/Label8.lines_skipped = total_lines - max_lines_visible
 	elif data.get("type") == "UserStartedSpeaking":
 		var world_state = get_world_state()
-		print("Prompt characters: ", $Deepgram.prompt.length())
+		print("Prompt characters: ", player_deepgram.prompt.length())
 		print("World State characters: ", JSON.stringify(world_state).length())
-		$Deepgram.replace_prompt(JSON.stringify(world_state))
+		player_deepgram.replace_prompt(JSON.stringify(world_state))
 		_clear_tts_audio()
 
 func _clear_tts_audio() -> void:
@@ -476,7 +469,7 @@ func _clear_tts_audio() -> void:
 	tts_playback = $TtsPlayer.get_stream_playback()
 	
 # we assume audio is linear16 PCM, little-endian, mono
-func _on_deepgram_binary_packet_received(audio) -> void:
+func _on_player_deepgram_binary_packet_received(audio) -> void:
 	if tts_playback == null:
 		return
 
@@ -493,3 +486,7 @@ func _on_deepgram_binary_packet_received(audio) -> void:
 		# stereo frames; use same value on L/R
 		tts_playback.push_frame(Vector2(f, f))
 		i += 2
+
+func _on_microphone_audio_captured(mono_data) -> void:
+	if player_deepgram != null:
+		player_deepgram.forward_microphone_audio(mono_data)

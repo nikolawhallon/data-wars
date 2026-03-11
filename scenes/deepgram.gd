@@ -68,19 +68,12 @@ func f32_to_i16(f: float):
 		return -32768
 	return int(f)
 
-# a convenience function to delete this node
-func delete():
-	print("Destroying DeepgramInstance")
-	queue_free()
-
 func _ready():
-	print("DeepgramInstance ready!")
-
+	print("Deepgram ready!")
 
 func initialize(api_key):
-	# start recording from the mic (actually this only starts capture of the recording I think)
-	$Microphone.recording = true
-
+	await ready
+	print("Initializing Deepgram")
 	if OS.get_name() == "Web":
 		# THIS REQUIRES A MANUAL PATCH AFTER EXPORT
 		var err = client.connect_to_url(DEEPGRAM_URL)
@@ -89,6 +82,7 @@ func initialize(api_key):
 			emit_signal("message_received", "unable to connect to deepgram;")
 			set_process(false)
 	else:
+		print("Connecting to Deepgram with Auth Headers")
 		client.handshake_headers = PackedStringArray(["Authorization: Token " + api_key])
 		var err = client.connect_to_url(DEEPGRAM_URL)
 		if err != OK:
@@ -277,7 +271,7 @@ func _process(_delta):
 	if client.get_ready_state() == WebSocketPeer.STATE_CLOSED and ws_connected:
 		_closed(false)
 
-func _on_microphone_audio_captured(mono_data) -> void:
+func forward_microphone_audio(mono_data) -> void:
 	if !ws_connected:
 		return
 
@@ -308,7 +302,7 @@ func send_audio(audio: PackedByteArray) -> void:
 
 		if remaining <= 0:
 			print("WARNING")
-			break
+			return
 
 		var chunk_size = min(remaining, audio.size() - offset)
 		var chunk = audio.slice(offset, offset + chunk_size)

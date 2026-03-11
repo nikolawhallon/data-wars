@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://bfxbeex3gufn7"]
 
 [ext_resource type="Script" uid="uid://cusfsng4tggj7" path="res://scenes/game.gd" id="1_yqjtg"]
-[ext_resource type="PackedScene" uid="uid://7p21h7lb5g1a" path="res://scenes/agent/deepgram.tscn" id="3_lnu2h"]
 [ext_resource type="PackedScene" uid="uid://bpi3iagfp8f3o" path="res://scenes/random_map.tscn" id="4_iywne"]
 [ext_resource type="PackedScene" uid="uid://wax5xqju7evu" path="res://scenes/cell_labels.tscn" id="4_lbhrr"]
 [ext_resource type="Texture2D" uid="uid://d0ond0cem3yfg" path="res://assets/data_icon.png" id="5_0tnpc"]
@@ -39,8 +38,6 @@ script = ExtResource("1_yqjtg")
 [node name="Camera2D" type="Camera2D" parent="." unique_id=358609030]
 limit_left = 0
 limit_top = 0
-
-[node name="Deepgram" parent="." unique_id=1228142323 instance=ExtResource("3_lnu2h")]
 
 [node name="TtsPlayer" type="AudioStreamPlayer" parent="." unique_id=471878036]
 
@@ -186,8 +183,6 @@ team = "player"
 [node name="Enemy" parent="." unique_id=124131673 instance=ExtResource("10_vtaks")]
 team = "enemy"
 
-[connection signal="binary_packet_received" from="Deepgram" to="." method="_on_deepgram_binary_packet_received"]
-[connection signal="message_received" from="Deepgram" to="." method="_on_deepgram_message_received"]
 [connection signal="clicks_updated" from="Player" to="." method="_on_player_clicks_updated"]
 [connection signal="data_updated" from="Player" to="." method="_on_player_data_updated"]
 [connection signal="minerals_updated" from="Player" to="." method="_on_player_minerals_updated"]
