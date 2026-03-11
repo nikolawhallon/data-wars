@@ -12,7 +12,16 @@
 [ext_resource type="Texture2D" uid="uid://dgsvic7e7bb6" path="res://assets/minerals_icon.png" id="7_trtic"]
 [ext_resource type="Script" uid="uid://cqpspisasjoe2" path="res://scenes/palette_swap.gd" id="7_u5sy4"]
 [ext_resource type="Texture2D" uid="uid://dw0rjtta0e0ji" path="res://assets/enemy_clicks_icon.png" id="8_trtic"]
+[ext_resource type="LabelSettings" uid="uid://c6l2kjaqhfhq1" path="res://resources/label_8.tres" id="10_trtic"]
 [ext_resource type="PackedScene" uid="uid://q1xyygateqac" path="res://scenes/team.tscn" id="10_vtaks"]
+[ext_resource type="Shader" uid="uid://cam3gov4sm1q1" path="res://scenes/darken.gdshader" id="12_ir15t"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ca42v"]
+shader = ExtResource("12_ir15t")
+shader_parameter/pal0 = Color(0.1725, 0.1294, 0.2157, 1)
+shader_parameter/pal1 = Color(0.1725, 0.1294, 0.2157, 1)
+shader_parameter/pal2 = Color(0.4627, 0.2667, 0.3843, 1)
+shader_parameter/pal3 = Color(0.6627451, 0.40784314, 0.40784314, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_u5sy4"]
 shader = ExtResource("6_p57ef")
@@ -40,35 +49,47 @@ z_index = 1
 [node name="UICanvas" type="CanvasLayer" parent="." unique_id=701779298]
 
 [node name="MarginContainer" type="MarginContainer" parent="UICanvas" unique_id=1420787755]
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 16.0
-grow_horizontal = 2
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 92.0
+grow_vertical = 2
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 8
 
-[node name="HBoxContainer" type="HBoxContainer" parent="UICanvas/MarginContainer" unique_id=1244686934]
+[node name="VBoxContainer" type="VBoxContainer" parent="UICanvas/MarginContainer" unique_id=1989361138]
 layout_mode = 2
 
-[node name="DataIcon" type="TextureRect" parent="UICanvas/MarginContainer/HBoxContainer" unique_id=1271156654]
+[node name="HBoxContainer" type="HBoxContainer" parent="UICanvas/MarginContainer/VBoxContainer" unique_id=1244686934]
+layout_mode = 2
+
+[node name="DataIcon" type="TextureRect" parent="UICanvas/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1271156654]
 layout_mode = 2
 texture = ExtResource("5_0tnpc")
 
-[node name="Data" type="Label" parent="UICanvas/MarginContainer/HBoxContainer" unique_id=997034171]
+[node name="Data" type="Label" parent="UICanvas/MarginContainer/VBoxContainer/HBoxContainer" unique_id=997034171]
 layout_mode = 2
 text = "0"
 label_settings = ExtResource("6_dinhu")
 
-[node name="MineralsIcon" type="TextureRect" parent="UICanvas/MarginContainer/HBoxContainer" unique_id=186397346]
+[node name="MineralsIcon" type="TextureRect" parent="UICanvas/MarginContainer/VBoxContainer/HBoxContainer" unique_id=186397346]
 layout_mode = 2
 texture = ExtResource("7_trtic")
 
-[node name="Minerals" type="Label" parent="UICanvas/MarginContainer/HBoxContainer" unique_id=1935365029]
+[node name="Minerals" type="Label" parent="UICanvas/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1935365029]
 layout_mode = 2
 text = "0"
 label_settings = ExtResource("6_dinhu")
+
+[node name="Label" type="Label" parent="UICanvas/MarginContainer/VBoxContainer" unique_id=8868885]
+layout_mode = 2
+text = "(R) RECONNECT
+(P) PALETTE
+(I) INFO
+(D) DEBUG
+(ARROWS) SCROLL"
+label_settings = ExtResource("10_trtic")
 
 [node name="MarginContainer2" type="MarginContainer" parent="UICanvas" unique_id=934056363]
 anchors_preset = 11
@@ -111,16 +132,36 @@ layout_mode = 2
 text = "0"
 label_settings = ExtResource("6_dinhu")
 
-[node name="ChatCanvas" type="CanvasLayer" parent="." unique_id=96994790 groups=["Debug"]]
-offset = Vector2(0, 240)
-transform = Transform2D(1, 0, 0, 1, 0, 240)
+[node name="Latencies" type="Label" parent="UICanvas/MarginContainer2/VBoxContainer" unique_id=1441612646]
+layout_mode = 2
+label_settings = ExtResource("10_trtic")
 
-[node name="Label8" parent="ChatCanvas" unique_id=74538079 instance=ExtResource("5_iywne")]
-custom_minimum_size = Vector2(640, 480)
+[node name="ChatCanvas" type="CanvasLayer" parent="." unique_id=96994790 groups=["Debug"]]
+offset = Vector2(0, 360)
+transform = Transform2D(1, 0, 0, 1, 0, 360)
+
+[node name="ColorRect" type="ColorRect" parent="ChatCanvas" unique_id=198745572]
+material = SubResource("ShaderMaterial_ca42v")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="ChatCanvas" unique_id=1712240642]
 offset_right = 640.0
-offset_bottom = 480.0
+offset_bottom = 120.0
+size_flags_horizontal = 4
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Label8" parent="ChatCanvas/MarginContainer" unique_id=74538079 instance=ExtResource("5_iywne")]
+custom_minimum_size = Vector2(624, 104)
+layout_mode = 2
 autowrap_mode = 3
-max_lines_visible = 22
+max_lines_visible = 12
 
 [node name="PaletteSwapCanvas" type="CanvasLayer" parent="." unique_id=285679540]
 

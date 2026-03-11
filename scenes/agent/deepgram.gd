@@ -153,13 +153,13 @@ func _connected(_proto):
 			"listen": {
 				"provider": {
 					"type": "deepgram",
-					"model": "nova-2"
+					"model": "flux-general-en"
 				}
 			},
 			"think": {
 				"provider": {
 					"type": "open_ai",
-					"model": "gpt-4o"
+					"model": "gpt-4.1-nano"
 				},
 				"prompt": prompt,
 				"functions": [

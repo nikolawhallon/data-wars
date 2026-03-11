@@ -63,8 +63,6 @@ var map_size: Vector2
 var tts_generator := AudioStreamGenerator.new()
 var tts_playback: AudioStreamGeneratorPlayback
 
-var just_injected_count = 0
-
 func _ready() -> void:
 	rng.randomize()
 
@@ -288,6 +286,12 @@ func get_world_state() -> Dictionary:
 			"rows": $CellLabels.rows,
 			"cell_anchor": "center"
 		},
+		"player_minerals": $Player.minerals,
+		"player_data": $Player.data,
+		"building_mineral_cost": 100,
+		"spam_bot_data_cost": 10,
+		"skunk_drone_mineral_cost": 50,
+		"data_drone_mineral_cost": 50,
 		"mines": mine_array,
 		"waters": water_array,
 		"sites": site_array,
@@ -303,13 +307,13 @@ func get_world_state() -> Dictionary:
 	return world_state
 
 func _on_player_data_updated():
-	$UICanvas/MarginContainer/HBoxContainer/Data.text = str($Player.data)
+	$UICanvas/MarginContainer/VBoxContainer/HBoxContainer/Data.text = str($Player.data)
 
 func _on_player_clicks_updated():
 	$UICanvas/MarginContainer2/VBoxContainer/HBoxContainer/Clicks.text = str($Player.clicks)
 
 func _on_player_minerals_updated() -> void:
-	$UICanvas/MarginContainer/HBoxContainer/Minerals.text = str($Player.minerals)
+	$UICanvas/MarginContainer/VBoxContainer/HBoxContainer/Minerals.text = str($Player.minerals)
 
 func build_building(site_id, building_type):
 	var site = instance_from_id(site_id)
@@ -385,7 +389,12 @@ func _on_deepgram_message_received(message) -> void:
 	if data == null:
 		return
 
-	if data.has("type") and data["type"] == "FunctionCallRequest":
+	if not data.has("type"):
+		return
+
+	print(data)
+	
+	if data["type"] == "FunctionCallRequest":
 		for function in data["functions"]:
 			if function["name"] == "build_building":
 				var arguments = JSON.parse_string(function["arguments"])
@@ -399,38 +408,27 @@ func _on_deepgram_message_received(message) -> void:
 				var arguments = JSON.parse_string(function["arguments"])
 				var result = set_target(arguments["unit_id"], arguments["target"])
 				$Deepgram.send_function_call_response(function["name"], result, function["id"])
-	elif data.has("type") and data.has("role") and data.has("content"):
-		# we don't want to print the enormous World State
-		# that Deepgame will spit back out at us
-		# which is in JSON format
-		var content = data["content"]
-		var result = JSON.new().parse(content)
-		if result != OK:
-			print(data)
-			if data["type"] == "ConversationText":
-				$ChatCanvas/Label8.text += str(data["role"], ":")
-				$ChatCanvas/Label8.text += "\n"
-				$ChatCanvas/Label8.text += str(data["content"])
-				$ChatCanvas/Label8.text += "\n"
-				$ChatCanvas/Label8.text += "\n"
-				var total_lines = $ChatCanvas/Label8.get_line_count()
-				var max_lines_visible = $ChatCanvas/Label8.max_lines_visible
-				if total_lines > max_lines_visible:
-					$ChatCanvas/Label8.lines_skipped = total_lines - max_lines_visible
-	else:
-		print(data)
-	
-	if data.get("type") == "UserStartedSpeaking":
+	elif data["type"] == "AgentStartedSpeaking":
+		$UICanvas/MarginContainer2/VBoxContainer/Latencies.text = "LAG: " + "%6.2f" % data["total_latency"]
+		$UICanvas/MarginContainer2/VBoxContainer/Latencies.text += "\n"
+		$UICanvas/MarginContainer2/VBoxContainer/Latencies.text += "TTS: " + "%6.2f" % data["tts_latency"]
+		$UICanvas/MarginContainer2/VBoxContainer/Latencies.text += "\n"
+		$UICanvas/MarginContainer2/VBoxContainer/Latencies.text += "LLM: " + "%6.2f" % data["ttt_latency"]
+	elif data["type"] == "ConversationText":
+		$ChatCanvas/MarginContainer/Label8.text += str(data["role"], ":")
+		$ChatCanvas/MarginContainer/Label8.text += "\n"
+		$ChatCanvas/MarginContainer/Label8.text += str(data["content"])
+		$ChatCanvas/MarginContainer/Label8.text += "\n"
+		$ChatCanvas/MarginContainer/Label8.text += "\n"
+		var total_lines = $ChatCanvas/MarginContainer/Label8.get_line_count()
+		var max_lines_visible = $ChatCanvas/MarginContainer/Label8.max_lines_visible
+		if total_lines > max_lines_visible:
+			$ChatCanvas/MarginContainer/Label8.lines_skipped = total_lines - max_lines_visible
+	elif data.get("type") == "UserStartedSpeaking":
 		var world_state = get_world_state()
 		print("Prompt characters: ", $Deepgram.prompt.length())
 		print("World State characters: ", JSON.stringify(world_state).length())
-		#if just_injected_count == 0:
-		#	$Deepgram.inject_user_message($Deepgram.prompt)
-		#	just_injected_count += 1
-		#else:
-		#	just_injected_count -= 1
-		$Deepgram.replace_prompt(JSON.stringify(world_state))
-
+		#$Deepgram.replace_prompt(JSON.stringify(world_state))
 		_clear_tts_audio()
 
 func _clear_tts_audio() -> void:
