@@ -1,5 +1,11 @@
 # data-wars
 
+The original Game Design Document can be found here: https://docs.google.com/document/d/1yl881vF5pbjIZUkDfpRuRqzYvci9hVO1G3AjP7fEMJc
+
+And the game is hosted here (possibly with the password `data-wars`): https://vacuumbrewstudios.itch.io/data-wars
+
+![Screenshot](./screenshot.png)
+
 ## Linux Builds
 
 The damn Linux export templates for Godot 4.6 seem to have some microphone bug. But the following got builds working:

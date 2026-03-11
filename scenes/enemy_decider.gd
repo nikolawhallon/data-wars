@@ -45,11 +45,11 @@ General strategy:
 	If there are any extractors which are not mining, prioritize sending them to Mines
 	Otherwise prioritize building Spam Bots to score Clicks
 	Remember, if you have Spam Bots, don't let them idle, send them to Transmission Towers
-	Build Data Centers to produce Data
-	Build Spam Bots and send them to Transmission Towers to score Clicks
+	Build Data Centers to produce Data and to build Spam Bots
+	Build Spam Bots at Data Centers and send them to Transmission Towers to score Clicks
 	Build Skunk Works to build Skunk Drones and Data Drones
-	Send Data Drones to the other Team's Data Centers to steal Data
-	Send Skunk Drones to the other Team's units to destroy them
+	Send Data Drones to the other Team's Data Centers to steal Data, don't let Data Drones idle
+	Send Skunk Drones to the other Team's units to destroy them, only let them idle if protecting an area
 
 Only give ONE SHORT command at a time.
 """
