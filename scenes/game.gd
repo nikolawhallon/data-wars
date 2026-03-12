@@ -33,6 +33,8 @@ var map_size: Vector2
 var tts_generator := AudioStreamGenerator.new()
 var tts_playback: AudioStreamGeneratorPlayback
 
+var game_over = false
+
 func _ready() -> void:
 	rng.randomize()
 	
@@ -54,31 +56,12 @@ func _ready() -> void:
 	$TtsPlayer.play()
 	tts_playback = $TtsPlayer.get_stream_playback()
 
-	var extractors_to_spawn = 4
-	while extractors_to_spawn > 0:
-		var player_extractor = load("res://scenes/extractor.tscn").instantiate()
-		player_extractor.init($Player, Vector2(randf_range(64.0, 256.0), randf_range(64.0, 256.0)))
-		add_child(player_extractor)
-		var enemy_extractor = load("res://scenes/extractor.tscn").instantiate()
-		enemy_extractor.init($Enemy, Vector2(randf_range(512.0, 1024.0), randf_range(512.0, 1024.0)))
-		add_child(enemy_extractor)
-		
-		extractors_to_spawn -= 1
-
 	meta_strike = load("res://scenes/meta_strike.tscn").instantiate()
 	meta_strike.connect("message_received", _on_meta_strike_message_received)
 	add_child(meta_strike)
 
-	player_deepgram = load("res://scenes/deepgram.tscn").instantiate()
-	player_deepgram.initialize(DEEPGRAM_API_KEY, "player")
-	player_deepgram.connect("binary_packet_received", _on_player_deepgram_binary_packet_received)
-	player_deepgram.connect("message_received", _on_player_deepgram_message_received)
-	add_child(player_deepgram)
-
-	enemy_deepgram = load("res://scenes/deepgram.tscn").instantiate()
-	enemy_deepgram.initialize(DEEPGRAM_API_KEY, "enemy")
-	enemy_deepgram.connect("message_received", _on_enemy_deepgram_message_received)
-	add_child(enemy_deepgram)
+	reconnect_player_deepgram()
+	reconnect_enemy_deepgram()
 
 	if OS.get_name() != "Web":
 		var microphone = load("res://scenes/microphone.tscn").instantiate()
@@ -127,51 +110,54 @@ func _process(delta: float) -> void:
 		meta_strike.connect("message_received", _on_meta_strike_message_received)
 		add_child(meta_strike)
 
-		if is_instance_valid(player_deepgram):
-			player_deepgram.queue_free()
-			player_deepgram = null
+		reconnect_player_deepgram()
+		reconnect_enemy_deepgram()
 
-		player_deepgram = load("res://scenes/deepgram.tscn").instantiate()
-		player_deepgram.initialize(DEEPGRAM_API_KEY, "player")
-		player_deepgram.connect("binary_packet_received", _on_player_deepgram_binary_packet_received)
-		player_deepgram.connect("message_received", _on_player_deepgram_message_received)
-		add_child(player_deepgram)
+	# ensure the Teams have Extractors if the game isn't over
+	if not game_over:
+		var player_extractor_number = 0
+		for extractor in get_tree().get_nodes_in_group("Extractor"):
+			if extractor.team != $Player:
+				continue
+			player_extractor_number += 1
+		
+		var player_extractors_to_spawn = 4 - player_extractor_number
+		while player_extractors_to_spawn > 0:
+			var extractor = load("res://scenes/extractor.tscn").instantiate()
+			extractor.init($Player, Vector2(randf_range(64.0, 256.0), randf_range(64.0, 256.0)))
+			add_child(extractor)
+			player_extractors_to_spawn -= 1
 
-		if is_instance_valid(enemy_deepgram):
-			enemy_deepgram.queue_free()
-			enemy_deepgram = null
+		var enemy_extractor_number = 0
+		for extractor in get_tree().get_nodes_in_group("Extractor"):
+			if extractor.team != $Enemy:
+				continue
+			enemy_extractor_number += 1
+		
+		var enemy_extractors_to_spawn = 4 - enemy_extractor_number
+		while enemy_extractors_to_spawn > 0:
+			var extractor = load("res://scenes/extractor.tscn").instantiate()
+			extractor.init($Enemy, Vector2(randf_range(512.0, 1024.0), randf_range(512.0, 1024.0)))
+			add_child(extractor)
+			enemy_extractors_to_spawn -= 1
 
-		enemy_deepgram = load("res://scenes/deepgram.tscn").instantiate()
-		enemy_deepgram.initialize(DEEPGRAM_API_KEY, "enemy")
-		enemy_deepgram.connect("message_received", _on_enemy_deepgram_message_received)
-		add_child(enemy_deepgram)
-		$EnemyTimer.start()
+	var liters = 0
+	for water in get_tree().get_nodes_in_group("Water"):
+		liters += water.liters
 
-	var player_extractor_number = 0
-	for extractor in get_tree().get_nodes_in_group("Extractor"):
-		if extractor.team != $Player:
-			continue
-		player_extractor_number += 1
-	
-	var player_extractors_to_spawn = 4 - player_extractor_number
-	while player_extractors_to_spawn > 0:
-		var extractor = load("res://scenes/extractor.tscn").instantiate()
-		extractor.init($Player, Vector2(randf_range(64.0, 256.0), randf_range(64.0, 256.0)))
-		add_child(extractor)
-		player_extractors_to_spawn -= 1
-
-	var enemy_extractor_number = 0
-	for extractor in get_tree().get_nodes_in_group("Extractor"):
-		if extractor.team != $Enemy:
-			continue
-		enemy_extractor_number += 1
-	
-	var enemy_extractors_to_spawn = 4 - enemy_extractor_number
-	while enemy_extractors_to_spawn > 0:
-		var extractor = load("res://scenes/extractor.tscn").instantiate()
-		extractor.init($Enemy, Vector2(randf_range(512.0, 1024.0), randf_range(512.0, 1024.0)))
-		add_child(extractor)
-		enemy_extractors_to_spawn -= 1
+	if not game_over and liters == 0:
+		blow_everything_up()
+		game_over = true
+		$UICanvas/GameOver.text += "\n\n"
+		if $Enemy.clicks > $Player.clicks:
+			$UICanvas/GameOver.text += "ENEMY WINS"
+		elif $Player.clicks > $Enemy.clicks:
+			$UICanvas/GameOver.text += "PLAYER WINS"
+		else:
+			$UICanvas/GameOver.text += "TEAMS TIED"
+		$UICanvas/GameOver.visible = true
+	elif game_over:
+		blow_everything_up()
 
 func get_world_state() -> Dictionary:
 	var mine_array: Array = []
@@ -428,8 +414,9 @@ func _on_player_deepgram_message_received(message) -> void:
 	var err := json.parse(message)
 
 	if err != OK:
-		print("JSON parse failed:", message)
-		print("Error:", json.get_error_message(), "at line", json.get_error_line())
+		print("JSON parse failed: ", message)
+		print("Error: ", json.get_error_message(), " at line ", json.get_error_line())
+		reconnect_player_deepgram()
 		return
 
 	var data = json.data
@@ -526,8 +513,9 @@ func _on_enemy_deepgram_message_received(message) -> void:
 	var err := json.parse(message)
 
 	if err != OK:
-		print("JSON parse failed:", message)
-		print("Error:", json.get_error_message(), "at line", json.get_error_line())
+		print("JSON parse failed: ", message)
+		print("Error: ", json.get_error_message(), " at line ", json.get_error_line())
+		reconnect_enemy_deepgram()
 		return
 
 	var data = json.data
@@ -590,22 +578,52 @@ func _on_enemy_decider_decision_made(command: String) -> void:
 
 func _on_enemy_decider_decision_failed(error: String) -> void:
 	print("Enemy failed to make a decision: " + error)
+	if enemy_deepgram:
+		var world_state = get_world_state()
+		$EnemyDecider.make_decision(world_state)
+	else:
+		$EnemyTimer.start()
 
 func _on_meta_strike_message_received(message) -> void:
 	print("MetaStrike: " + message)
 	if message == "STRIKE":
-		for unit in get_tree().get_nodes_in_group("Unit"):
+		blow_everything_up()
+
+func blow_everything_up():
+	for unit in get_tree().get_nodes_in_group("Unit"):
+		var explosion = load("res://scenes/explosion.tscn").instantiate()
+		explosion.global_position = unit.global_position
+		add_child(explosion)
+		unit.queue_free()
+	for building in get_tree().get_nodes_in_group("Building"):
+		var water = building.get_parent()
+		var site = load("res://scenes/site.tscn").instantiate()
+		water.add_child(site)
+		site.global_position = building.global_position
+		for i in 10:
 			var explosion = load("res://scenes/explosion.tscn").instantiate()
-			explosion.global_position = unit.global_position
+			explosion.global_position = building.global_position + Vector2(randf_range(-24.0, 24.0), randf_range(-24.0, 24.0))
 			add_child(explosion)
-			unit.queue_free()
-		for building in get_tree().get_nodes_in_group("Building"):
-			var water = building.get_parent()
-			var site = load("res://scenes/site.tscn").instantiate()
-			water.add_child(site)
-			site.global_position = building.global_position
-			for i in 10:
-				var explosion = load("res://scenes/explosion.tscn").instantiate()
-				explosion.global_position = building.global_position + Vector2(randf_range(-24.0, 24.0), randf_range(-24.0, 24.0))
-				add_child(explosion)
-			building.queue_free()
+		building.queue_free()
+
+func reconnect_player_deepgram():
+	if is_instance_valid(player_deepgram):
+		player_deepgram.queue_free()
+		player_deepgram = null
+
+	player_deepgram = load("res://scenes/deepgram.tscn").instantiate()
+	player_deepgram.initialize(DEEPGRAM_API_KEY, "player")
+	player_deepgram.connect("binary_packet_received", _on_player_deepgram_binary_packet_received)
+	player_deepgram.connect("message_received", _on_player_deepgram_message_received)
+	add_child(player_deepgram)
+
+func reconnect_enemy_deepgram():
+	if is_instance_valid(enemy_deepgram):
+		enemy_deepgram.queue_free()
+		enemy_deepgram = null
+
+	enemy_deepgram = load("res://scenes/deepgram.tscn").instantiate()
+	enemy_deepgram.initialize(DEEPGRAM_API_KEY, "enemy")
+	enemy_deepgram.connect("message_received", _on_enemy_deepgram_message_received)
+	add_child(enemy_deepgram)
+	$EnemyTimer.start()

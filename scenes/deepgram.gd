@@ -56,6 +56,8 @@ Units:
     Spam Bot: scoring unit that can be dispatched to Transmission Towers
 
 Team commands may involve building structures, producing units, or moving units.
+
+Always try to build buildings and units when asked, if things fail an error will be returned, but don't assume the Team doesn't have enough resources.
 """
 
 # functions

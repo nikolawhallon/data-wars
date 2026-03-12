@@ -62,3 +62,7 @@ func _on_unit_timer_timeout() -> void:
 
 	play("default")
 	producing = null
+
+func _on_water_timer_timeout() -> void:
+	var water = get_parent()
+	var _consumed = water.decrement(1)

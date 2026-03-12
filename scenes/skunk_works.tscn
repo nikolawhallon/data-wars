@@ -57,4 +57,9 @@ script = ExtResource("2_b0jxg")
 wait_time = 10.0
 one_shot = true
 
+[node name="WaterTimer" type="Timer" parent="." unique_id=380504673]
+wait_time = 10.0
+autostart = true
+
 [connection signal="timeout" from="UnitTimer" to="." method="_on_unit_timer_timeout"]
+[connection signal="timeout" from="WaterTimer" to="." method="_on_water_timer_timeout"]

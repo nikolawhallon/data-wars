@@ -1,7 +1,7 @@
 extends AnimatedSprite2D
 
 
-var liters = 800
+var liters = 600
 
 func _ready():
 	$Label8.text = str(liters)

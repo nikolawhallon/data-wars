@@ -96,7 +96,7 @@ func generate():
 	var map_origin = Vector2($Walls.get_used_rect().position) * tile_size
 	#var map_size = Vector2($Walls.get_used_rect().size) * tile_size
 
-	var mine_number = 4
+	var mine_number = 3
 	var mines = []
 	while mine_number > 0:
 		var mine = load("res://scenes/mine.tscn").instantiate()
@@ -125,7 +125,7 @@ func generate():
 		mine_number -= 1
 		mines.append(mine)
 
-	var water_number = 8
+	var water_number = 6
 	var waters = []
 	while water_number > 0:
 		var water = load("res://scenes/water.tscn").instantiate()
@@ -152,23 +152,31 @@ func generate():
 				continue
 
 			water.global_position = pos
-			
+
+			var site_number = 0
 			if is_ground_block(x - 3, y, 1):
 				var site = load("res://scenes/site.tscn").instantiate()
 				water.add_child(site)
 				site.global_position = map_origin + tile_size / 2 + Vector2(x - 3, y) * tile_size
+				site_number += 1
 			if is_ground_block(x + 3, y, 1):
 				var site = load("res://scenes/site.tscn").instantiate()
 				water.add_child(site)
 				site.global_position = map_origin + tile_size / 2 + Vector2(x + 3, y) * tile_size
+				site_number += 1
 			if is_ground_block(x, y - 3, 1):
 				var site = load("res://scenes/site.tscn").instantiate()
 				water.add_child(site)
 				site.global_position = map_origin + tile_size / 2 + Vector2(x, y - 3) * tile_size
+				site_number += 1
 			if is_ground_block(x, y + 3, 1):
 				var site = load("res://scenes/site.tscn").instantiate()
 				water.add_child(site)
 				site.global_position = map_origin + tile_size / 2 + Vector2(x, y + 3) * tile_size
+				site_number += 1
+
+			if site_number == 0:
+				continue
 			
 			break
 			
