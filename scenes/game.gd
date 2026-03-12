@@ -1,54 +1,30 @@
 extends Node2D
 
-
-# CONTEXT LIMIT seems to be only about 3000 characters...
-# at about 100 characters per object, that's only ~30 objects worth
-# retrieval can be done via a function:
-# * key, e.g. skunk_works, extractors, etc
-# * cell (optional), e.g. A1, C6, etc
-
-# Tuesday:
-# phone input?
-
-# Wednesday:
-# resource management
-# animations
-# sound effects?
-# enemy AI?
-
 # Thursday
-# testing, testing, testing
-# stretch goals?
+# win condition
+# explosions
+# water drying up
+# building animations
 # produce video
 
-# Monday:
-# Nikola:
-# Teams
+# Stretch Goals
+# data drone collecting animation
+# spam bot mining animation
+# phone input (calling in strikes)
 
-# Sam:
-# minerals (48x48)
-# spam bots
-# data drones
-# minerals (icon)
-# data (icon)
-# clicks (icon)
-
-# big tasks
-# base game
-# * including functions to retrieve parts of state
-#   because the full state is too big
-# text-only mode
-# enemy AI using... AI + VA
-# phone input
+# giving up on:
+# sound effects
 # networked multiplayer
-# planning
-# better look-ups (not the full world state)
+# text-only mode
+# information retrieval functions
+# planning (event-based function calling)
 
 var muted_texture  := preload("res://assets/muted.png")
 var unmuted_texture  := preload("res://assets/unmuted.png")
 
 var rng = RandomNumberGenerator.new()
 
+var meta_strike = null
 const DEEPGRAM_API_KEY = "asdf"
 var player_deepgram = null
 var enemy_deepgram = null
@@ -90,6 +66,10 @@ func _ready() -> void:
 		add_child(enemy_extractor)
 		
 		extractors_to_spawn -= 1
+
+	meta_strike = load("res://scenes/meta_strike.tscn").instantiate()
+	meta_strike.connect("message_received", _on_meta_strike_message_received)
+	add_child(meta_strike)
 
 	player_deepgram = load("res://scenes/deepgram.tscn").instantiate()
 	player_deepgram.initialize(DEEPGRAM_API_KEY, "player")
@@ -141,6 +121,14 @@ func _process(delta: float) -> void:
 		$PaletteSwapCanvas/PaletteSwap.next_palette()
 
 	if Input.is_action_just_pressed("reconnect"):
+		if is_instance_valid(meta_strike):
+			meta_strike.queue_free()
+			meta_strike = null
+
+		meta_strike = load("res://scenes/meta_strike.tscn").instantiate()
+		meta_strike.connect("message_received", _on_meta_strike_message_received)
+		add_child(meta_strike)
+
 		if is_instance_valid(player_deepgram):
 			player_deepgram.queue_free()
 			player_deepgram = null
@@ -166,12 +154,25 @@ func _process(delta: float) -> void:
 			continue
 		player_extractor_number += 1
 	
-	var extractors_to_spawn = 4 - player_extractor_number
-	while extractors_to_spawn > 0:
+	var player_extractors_to_spawn = 4 - player_extractor_number
+	while player_extractors_to_spawn > 0:
 		var extractor = load("res://scenes/extractor.tscn").instantiate()
 		extractor.init($Player, Vector2(randf_range(64.0, 256.0), randf_range(64.0, 256.0)))
 		add_child(extractor)
-		extractors_to_spawn -= 1
+		player_extractors_to_spawn -= 1
+
+	var enemy_extractor_number = 0
+	for extractor in get_tree().get_nodes_in_group("Extractor"):
+		if extractor.team != $Enemy:
+			continue
+		enemy_extractor_number += 1
+	
+	var enemy_extractors_to_spawn = 4 - enemy_extractor_number
+	while enemy_extractors_to_spawn > 0:
+		var extractor = load("res://scenes/extractor.tscn").instantiate()
+		extractor.init($Enemy, Vector2(randf_range(512.0, 1024.0), randf_range(512.0, 1024.0)))
+		add_child(extractor)
+		enemy_extractors_to_spawn -= 1
 
 func get_world_state() -> Dictionary:
 	var mine_array: Array = []
@@ -520,7 +521,7 @@ func _on_microphone_audio_captured(mono_data) -> void:
 		player_deepgram.forward_microphone_audio(mono_data)
 
 func _on_enemy_deepgram_message_received(message) -> void:
-	print("Enemy Deepgram: " + message)
+	#print("Enemy Deepgram: " + message)
 
 	var json := JSON.new()
 	var err := json.parse(message)
@@ -586,3 +587,18 @@ func _on_enemy_decider_decision_made(command: String) -> void:
 
 func _on_enemy_decider_decision_failed(error: String) -> void:
 	print("Enemy failed to make a decision: " + error)
+
+func _on_meta_strike_message_received(message) -> void:
+	print("MetaStrike: " + message)
+	if message == "STRIKE":
+		for unit in get_tree().get_nodes_in_group("Unit"):
+			var explosion = load("res://scenes/explosion.tscn").instantiate()
+			explosion.global_position = unit.global_position
+			add_child(explosion)
+			unit.queue_free()
+		for building in get_tree().get_nodes_in_group("Building"):
+			for i in 10:
+				var explosion = load("res://scenes/explosion.tscn").instantiate()
+				explosion.global_position = building.global_position + Vector2(randf_range(-24.0, 24.0), randf_range(-24.0, 24.0))
+				add_child(explosion)
+			building.queue_free()

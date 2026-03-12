@@ -11,7 +11,7 @@ shader_parameter/pal1 = Color(0.4627, 0.2667, 0.3843, 1)
 shader_parameter/pal2 = Color(0.6627, 0.4078, 0.4078, 1)
 shader_parameter/pal3 = Color(0.9294, 0.7059, 0.6314, 1)
 
-[node name="SkunkWorks" type="Sprite2D" unique_id=857615151 groups=["SkunkWorks"]]
+[node name="SkunkWorks" type="Sprite2D" unique_id=857615151 groups=["Building", "SkunkWorks"]]
 material = SubResource("ShaderMaterial_065em")
 texture = ExtResource("1_f1nbc")
 script = ExtResource("2_b0jxg")

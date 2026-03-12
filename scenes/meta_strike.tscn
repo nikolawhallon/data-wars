@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dotc36qkjqlwu"]
+
+[ext_resource type="Script" uid="uid://bgupnenf6h2c0" path="res://scenes/meta_strike.gd" id="1_60eyy"]
+
+[node name="MetaStrike" type="Node" unique_id=1316082862]
+script = ExtResource("1_60eyy")

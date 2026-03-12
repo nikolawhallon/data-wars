@@ -70,6 +70,7 @@ func f32_to_i16(f: float):
 	return int(f)
 
 func _ready():
+	client.set_outbound_buffer_size(16 * 1024 * 1024)
 	print("Deepgram ready!")
 
 func initialize(api_key, tag):
@@ -283,7 +284,7 @@ func forward_microphone_audio(mono_data) -> void:
 	audio_buffer.append_array(mono_data)
 	# TODO: consider using `set_encode_buffer_max_size(value)` to increase the packet size
 	# this might allow us to stream slower and possibly improve performance
-	if audio_buffer.size() >= 1024 * 40 * 0.5:
+	if audio_buffer.size() >= 1024 * 80 * 0.5:
 		# convert the f32 pcm to linear16/i16 pcm
 		# this is a bit hacky, but godot doesn't seem to offer too much flexibility with low-level types
 		var linear16_audio: PackedByteArray = []
