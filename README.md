@@ -16,9 +16,18 @@ It runs at wss://data-wars.deepgram.com and allows you to call +1(734)802-2990 a
 During a Strike, all units and buildings in the game, on both Teams, get destroyed, and everyone has to effectively
 start over again.
 
+## Windows Builds
+
+Worked out of the box...
+
+## Mac Builds
+
+I could only run the Mac build via the Terminal, i.e. by executing `Content/MacOS/Data Wars` inside
+the App Bundle - this was the only way I was able to get the OS to prompt me for microphone permissions.
+
 ## Linux Builds
 
-The damn Linux export templates for Godot 4.6 seem to have some microphone bug. But the following got builds working:
+The damn Linux export templates for Godot 4.6 seem to have some microphone bug. But the following got builds working for me:
 ```
 cp /run/current-system/sw/bin/godot4.6 data-wars.x86_64
 chmod u+w data-wars.x86_64
@@ -55,7 +64,7 @@ via the browser, not the Godot engine, for maximal performance. This also meant 
 microphone "muting" via the browser, and a few other tricks. The following is the recipe I used.
 
 In Web builds, in `index.js`, replace:
-```javascriptlet socket=null;try
+```javascript
 let socket=null;try{if(protos){socket=new WebSocket(url,protos.split(","))}else{socket=new WebSocket(url)}}catch(e){return 0}socket.binaryType="arraybuffer";return GodotWebSocket.create(socket,on_open,on_message,on_error,on_close)
 ```
 

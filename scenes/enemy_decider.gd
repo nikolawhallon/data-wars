@@ -57,6 +57,7 @@ The commands could use words like "all" or "two" or "five" to execute multiple a
 For example "move all Extractors to a Mine" or "have all Data Centers produce Spam Bots" or "build two new Skunk Works."
 Do not move Extractors which are already mining Minerals.
 Do not move Data Drones which are already collecting Data.
+Commands should only relate to what exists on the map at present, never in the future.
 """
 
 var messages = []
@@ -118,7 +119,7 @@ func make_decision(world_state: Dictionary) -> void:
 		busy = false
 		decision_failed.emit("Failed to start HTTP request: " + str(err))
 
-func _on_request_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
+func _on_request_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
 	busy = false
 
 	if result != HTTPRequest.RESULT_SUCCESS:

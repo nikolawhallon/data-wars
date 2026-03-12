@@ -42,10 +42,10 @@ func _ready() -> void:
 	map_size = $RandomMap/Walls.get_used_rect().size * $RandomMap/Walls.tile_set.tile_size
 	$CellLabels.spawn_cell_labels()
 
-	$Camera2D.limit_left   = int(map_origin.x - 120.0)
-	$Camera2D.limit_top    = int(map_origin.y - 120.0)
-	$Camera2D.limit_right  = int(map_origin.x + map_size.x + 120.0)
-	$Camera2D.limit_bottom = int(map_origin.y + map_size.y + 120.0)
+	$Camera2D.limit_left   = int(map_origin.x - 132.0)
+	$Camera2D.limit_top    = int(map_origin.y - 132.0)
+	$Camera2D.limit_right  = int(map_origin.x + map_size.x + 132.0)
+	$Camera2D.limit_bottom = int(map_origin.y + map_size.y + 132.0)
 
 	tts_generator.mix_rate = AudioServer.get_mix_rate()
 	tts_generator.buffer_length = 60.0
@@ -121,7 +121,7 @@ func _process(delta: float) -> void:
 		var player_extractors_to_spawn = 4 - player_extractor_number
 		while player_extractors_to_spawn > 0:
 			var extractor = load("res://scenes/extractor.tscn").instantiate()
-			extractor.init($Player, Vector2(randf_range(64.0, 256.0), randf_range(64.0, 256.0)))
+			extractor.init($Player, $CellLabels.cell_label_to_pos("A1"))
 			add_child(extractor)
 			player_extractors_to_spawn -= 1
 
@@ -134,7 +134,7 @@ func _process(delta: float) -> void:
 		var enemy_extractors_to_spawn = 4 - enemy_extractor_number
 		while enemy_extractors_to_spawn > 0:
 			var extractor = load("res://scenes/extractor.tscn").instantiate()
-			extractor.init($Enemy, Vector2(randf_range(512.0, 1024.0), randf_range(512.0, 1024.0)))
+			extractor.init($Enemy, $CellLabels.cell_label_to_pos("D4"))
 			add_child(extractor)
 			enemy_extractors_to_spawn -= 1
 
