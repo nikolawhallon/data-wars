@@ -135,7 +135,24 @@ Next, in `index.html`, insert the following block **before**:
 ```
 
 ```html
-<!-- Deepgram Mic helper: must be before index.js -->
+<script>
+window.addEventListener("pointerdown", async () => {
+  try {
+    if (window.DeepgramMic && window.DeepgramMic.ctx && window.DeepgramMic.ctx.state !== "running") {
+      await window.DeepgramMic.ctx.resume();
+      console.log("Resumed DeepgramMic AudioContext");
+    }
+    if (window.DeepgramTTS && window.DeepgramTTS.ctx && window.DeepgramTTS.ctx.state !== "running") {
+      await window.DeepgramTTS.ctx.resume();
+      console.log("Resumed DeepgramTTS AudioContext");
+    }
+  } catch (e) {
+    console.error("AudioContext resume failed:", e);
+  }
+}, { once: false });
+</script>
+
+<!-- Deepgram Mic helper -->
 <script>
 window.DeepgramMic = {
   ctx: null,
@@ -151,15 +168,20 @@ window.DeepgramMic = {
 
   async start() {
     if (this.processor) return;
+
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       console.error("getUserMedia not available");
       return;
     }
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
     const Ctx = window.AudioContext || window.webkitAudioContext;
     const ctx = new Ctx();
     this.ctx = ctx;
+
+    await ctx.resume().catch(console.error);
+    console.log("Mic ctx state:", ctx.state);
 
     const source = ctx.createMediaStreamSource(stream);
     this.source = source;
@@ -171,7 +193,7 @@ window.DeepgramMic = {
     processor.onaudioprocess = (event) => {
       if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
-      const input = event.inputBuffer.getChannelData(0); // mono Float32
+      const input = event.inputBuffer.getChannelData(0);
       const len = input.length;
       const pcm16 = new Int16Array(len);
 
@@ -184,12 +206,18 @@ window.DeepgramMic = {
       this.ws.send(pcm16.buffer);
     };
 
+    // Chrome needs the processor connected to a live graph
+    const muteGain = ctx.createGain();
+    muteGain.gain.value = 0;
+
     source.connect(processor);
-    // processor.connect(ctx.destination); // enable only if you want local monitoring
+    processor.connect(muteGain);
+    muteGain.connect(ctx.destination);
   },
 
   stop() {
     if (!this.processor) return;
+
     this.source && this.source.disconnect();
     this.processor.disconnect();
     this.processor.onaudioprocess = null;
@@ -207,7 +235,7 @@ window.addEventListener("keydown", (e) => {
 });
 </script>
 
-<!-- Deepgram TTS helper: must be before index.js -->
+<!-- Deepgram TTS helper -->
 <script>
 window.DeepgramTTS = {
   ctx: null,
@@ -218,21 +246,22 @@ window.DeepgramTTS = {
 
   _ensureCtx() {
     if (this.ctx) return;
+
     const Ctx = window.AudioContext || window.webkitAudioContext;
     this.ctx = new Ctx();
   },
 
-  async resume() {
+  async enqueue(arrayBuffer) {
     this._ensureCtx();
-    if (this.ctx.state !== "running") {
-      await this.ctx.resume();
-    }
-  },
 
-  enqueue(arrayBuffer) {
-    this._ensureCtx();
+    if (this.ctx.state !== "running") {
+      await this.ctx.resume().catch(console.error);
+    }
+
+    console.log("TTS ctx state:", this.ctx.state);
 
     const myGeneration = this.generation;
+
     const pcm16 = new Int16Array(arrayBuffer);
     const len = pcm16.length;
 
@@ -248,6 +277,7 @@ window.DeepgramTTS = {
     src.connect(this.ctx.destination);
 
     const now = this.ctx.currentTime;
+
     if (!this.started || this.nextTime < now + 0.03) {
       this.nextTime = now + 0.03;
       this.started = true;
@@ -278,6 +308,7 @@ window.DeepgramTTS = {
       try { src.stop(0); } catch (_) {}
       try { src.disconnect(); } catch (_) {}
     }
+
     this.activeSources.clear();
   }
 };
