@@ -28,7 +28,7 @@ func init(initial_team, initial_position):
 		mat.set_shader_parameter("pal2", Color("#764462"))
 		mat.set_shader_parameter("pal3", Color("#2c2137"))
 
-func _physics_process(delta: float) -> void:
+func _physics_process(_delta: float) -> void:
 	var target_position = null
 
 	if target == null:

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b3r36kuw472bu"
-path="res://.godot/imported/skunk_works.png-d8cad7a8d6bba36c94c1572505682b54.ctex"
+uid="uid://bmg1g83f8bc7o"
+path="res://.godot/imported/transmission_tower_2.png-31d8427264b4975a3e68c8f158e51372.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/skunk_works.png"
-dest_files=["res://.godot/imported/skunk_works.png-d8cad7a8d6bba36c94c1572505682b54.ctex"]
+source_file="res://assets/transmission_tower/transmission_tower_2.png"
+dest_files=["res://.godot/imported/transmission_tower_2.png-31d8427264b4975a3e68c8f158e51372.ctex"]
 
 [params]
 

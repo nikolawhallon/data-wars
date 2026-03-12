@@ -3,14 +3,12 @@ extends Node2D
 # Thursday
 # win condition
 # explosions
-# water drying up
-# building animations
+# minerals depleting
 # produce video
 
 # Stretch Goals
 # data drone collecting animation
-# spam bot mining animation
-# phone input (calling in strikes)
+# extractor mining animation
 
 # giving up on:
 # sound effects
@@ -147,6 +145,7 @@ func _process(delta: float) -> void:
 		enemy_deepgram.initialize(DEEPGRAM_API_KEY, "enemy")
 		enemy_deepgram.connect("message_received", _on_enemy_deepgram_message_received)
 		add_child(enemy_deepgram)
+		$EnemyTimer.start()
 
 	var player_extractor_number = 0
 	for extractor in get_tree().get_nodes_in_group("Extractor"):
@@ -572,11 +571,15 @@ func _on_enemy_deepgram_message_received(message) -> void:
 			$ChatCanvas/MarginContainer/HBoxContainer/Enemy.lines_skipped = total_lines - max_lines_visible
 		if data["role"] == "assistant":
 			$EnemyDecider.push_assistant_message(data["content"])
+	elif data["type"] == "AgentAudioDone":
+		$EnemyTimer.start()
 
 func _on_enemy_timer_timeout() -> void:
 	if enemy_deepgram:
 		var world_state = get_world_state()
 		$EnemyDecider.make_decision(world_state)
+	else:
+		$EnemyTimer.start()
 
 func _on_enemy_decider_decision_made(command: String) -> void:
 	print("Enemy made a decision: " + command)
@@ -597,6 +600,10 @@ func _on_meta_strike_message_received(message) -> void:
 			add_child(explosion)
 			unit.queue_free()
 		for building in get_tree().get_nodes_in_group("Building"):
+			var water = building.get_parent()
+			var site = load("res://scenes/site.tscn").instantiate()
+			water.add_child(site)
+			site.global_position = building.global_position
 			for i in 10:
 				var explosion = load("res://scenes/explosion.tscn").instantiate()
 				explosion.global_position = building.global_position + Vector2(randf_range(-24.0, 24.0), randf_range(-24.0, 24.0))

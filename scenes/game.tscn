@@ -202,7 +202,7 @@ team = "player"
 team = "enemy"
 
 [node name="EnemyTimer" type="Timer" parent="." unique_id=301265577]
-wait_time = 10.0
+one_shot = true
 autostart = true
 
 [node name="EnemyDecider" type="Node" parent="." unique_id=1207847230]

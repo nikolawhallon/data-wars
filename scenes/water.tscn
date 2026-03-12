@@ -1,11 +1,34 @@
 [gd_scene format=3 uid="uid://cie4t3j8pbmx5"]
 
-[ext_resource type="Texture2D" uid="uid://b86f3fdkep6rk" path="res://assets/water.png" id="1_bdk6y"]
+[ext_resource type="Texture2D" uid="uid://cqy6ipq6cs8y6" path="res://assets/water/water_1.png" id="1_xgdjl"]
+[ext_resource type="Texture2D" uid="uid://bbbdaxkpwel56" path="res://assets/water/water_2.png" id="2_5exq1"]
 [ext_resource type="Script" uid="uid://r8dfiebwt1x8" path="res://scenes/water.gd" id="2_p1n2c"]
+[ext_resource type="Texture2D" uid="uid://k28h030e0pph" path="res://assets/water/water_3.png" id="3_4pb3l"]
 [ext_resource type="PackedScene" uid="uid://cn0ioholkgnb2" path="res://scenes/label_8.tscn" id="3_p1n2c"]
+[ext_resource type="Texture2D" uid="uid://dyobib556uqjn" path="res://assets/water/water_4.png" id="4_htah3"]
 
-[node name="Water" type="Sprite2D" unique_id=1837599999 groups=["Water"]]
-texture = ExtResource("1_bdk6y")
+[sub_resource type="SpriteFrames" id="SpriteFrames_a35vf"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_xgdjl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_5exq1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_4pb3l")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_htah3")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="Water" type="AnimatedSprite2D" unique_id=1294920273 groups=["Water"]]
+sprite_frames = SubResource("SpriteFrames_a35vf")
 script = ExtResource("2_p1n2c")
 
 [node name="Label8" parent="." unique_id=74538079 groups=["Info"] instance=ExtResource("3_p1n2c")]

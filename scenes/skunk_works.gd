@@ -1,4 +1,4 @@
-extends Sprite2D
+extends AnimatedSprite2D
 
 
 var rng = RandomNumberGenerator.new()
@@ -47,6 +47,7 @@ func spawn_unit(type):
 
 	producing = type
 	$UnitTimer.start()
+	play("producing")
 	return "Successfully building unit"
 
 func _on_unit_timer_timeout() -> void:
@@ -58,5 +59,6 @@ func _on_unit_timer_timeout() -> void:
 		var data_drone = load("res://scenes/data_drone.tscn").instantiate()
 		data_drone.init(team, global_position + Vector2(rng.randf_range(-64.0, 64.0), rng.randf_range(-64.0, 64.0)))
 		get_tree().get_current_scene().add_child(data_drone)
-		
+
+	play("default")
 	producing = null

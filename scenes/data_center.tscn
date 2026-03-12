@@ -1,8 +1,12 @@
 [gd_scene format=3 uid="uid://b3tp1of0u3u20"]
 
 [ext_resource type="Shader" uid="uid://b8t74ow17sia1" path="res://scenes/inverse.gdshader" id="1_0o2gg"]
-[ext_resource type="Texture2D" uid="uid://dngncol6c3k4a" path="res://assets/data_center.png" id="1_3870i"]
 [ext_resource type="Script" uid="uid://jykvj08xaccd" path="res://scenes/data_center.gd" id="2_brcna"]
+[ext_resource type="Texture2D" uid="uid://w4ovuuoprvgo" path="res://assets/data_center/data_center_idle_1.png" id="3_jl5ch"]
+[ext_resource type="Texture2D" uid="uid://drq0l7apfk7my" path="res://assets/data_center/data_center_producing_1.png" id="4_3elua"]
+[ext_resource type="Texture2D" uid="uid://dsikft8sgunqv" path="res://assets/data_center/data_center_producing_2.png" id="5_ha7m5"]
+[ext_resource type="Texture2D" uid="uid://my8r3cmagknf" path="res://assets/data_center/data_center_producing_3.png" id="6_ryyxn"]
+[ext_resource type="Texture2D" uid="uid://bt0ymt5vysj7y" path="res://assets/data_center/data_center_producing_4.png" id="7_gh7pg"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ii474"]
 shader = ExtResource("1_0o2gg")
@@ -11,15 +15,44 @@ shader_parameter/pal1 = Color(0.4627, 0.2667, 0.3843, 1)
 shader_parameter/pal2 = Color(0.6627, 0.4078, 0.4078, 1)
 shader_parameter/pal3 = Color(0.9294, 0.7059, 0.6314, 1)
 
+[sub_resource type="SpriteFrames" id="SpriteFrames_57g4l"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_jl5ch")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_3elua")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_ha7m5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_ryyxn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_gh7pg")
+}],
+"loop": true,
+"name": &"producing",
+"speed": 5.0
+}]
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0o2gg"]
 size = Vector2(48, 48)
 
 [node name="DataCenter" type="Area2D" unique_id=1727223288 groups=["Building", "DataCenter"]]
 script = ExtResource("2_brcna")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=871493217]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1212827139]
 material = SubResource("ShaderMaterial_ii474")
-texture = ExtResource("1_3870i")
+sprite_frames = SubResource("SpriteFrames_57g4l")
+animation = &"producing"
 
 [node name="WaterTimer" type="Timer" parent="." unique_id=226161082]
 autostart = true
