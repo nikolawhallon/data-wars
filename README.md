@@ -2,6 +2,8 @@
 
 The original Game Design Document can be found here: https://docs.google.com/document/d/1yl881vF5pbjIZUkDfpRuRqzYvci9hVO1G3AjP7fEMJc
 
+This was made for Deepgram's GramJam 2026 hackathon, and has a corresponding DevPost link here: https://devpost.team/deepgram/projects/14276
+
 And the game is hosted here (possibly with the password `data-wars`): https://vacuumbrewstudios.itch.io/data-wars
 
 ![Screenshot](./screenshot.png)
@@ -314,3 +316,8 @@ window.DeepgramTTS = {
 };
 </script>
 ```
+
+## Credits
+
+Programming and Design: Nikola Whallon
+Art: Sam DeVarti
