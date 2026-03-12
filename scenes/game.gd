@@ -92,13 +92,13 @@ func _ready() -> void:
 		extractors_to_spawn -= 1
 
 	player_deepgram = load("res://scenes/deepgram.tscn").instantiate()
-	player_deepgram.initialize(DEEPGRAM_API_KEY)
+	player_deepgram.initialize(DEEPGRAM_API_KEY, "player")
 	player_deepgram.connect("binary_packet_received", _on_player_deepgram_binary_packet_received)
 	player_deepgram.connect("message_received", _on_player_deepgram_message_received)
 	add_child(player_deepgram)
 
 	enemy_deepgram = load("res://scenes/deepgram.tscn").instantiate()
-	enemy_deepgram.initialize(DEEPGRAM_API_KEY)
+	enemy_deepgram.initialize(DEEPGRAM_API_KEY, "enemy")
 	enemy_deepgram.connect("message_received", _on_enemy_deepgram_message_received)
 	add_child(enemy_deepgram)
 
@@ -146,7 +146,7 @@ func _process(delta: float) -> void:
 			player_deepgram = null
 
 		player_deepgram = load("res://scenes/deepgram.tscn").instantiate()
-		player_deepgram.initialize(DEEPGRAM_API_KEY)
+		player_deepgram.initialize(DEEPGRAM_API_KEY, "player")
 		player_deepgram.connect("binary_packet_received", _on_player_deepgram_binary_packet_received)
 		player_deepgram.connect("message_received", _on_player_deepgram_message_received)
 		add_child(player_deepgram)
@@ -156,7 +156,7 @@ func _process(delta: float) -> void:
 			enemy_deepgram = null
 
 		enemy_deepgram = load("res://scenes/deepgram.tscn").instantiate()
-		enemy_deepgram.initialize(DEEPGRAM_API_KEY)
+		enemy_deepgram.initialize(DEEPGRAM_API_KEY, "enemy")
 		enemy_deepgram.connect("message_received", _on_enemy_deepgram_message_received)
 		add_child(enemy_deepgram)
 

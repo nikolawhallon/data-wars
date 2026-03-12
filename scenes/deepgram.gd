@@ -72,12 +72,12 @@ func f32_to_i16(f: float):
 func _ready():
 	print("Deepgram ready!")
 
-func initialize(api_key):
+func initialize(api_key, tag):
 	await ready
 	print("Initializing Deepgram")
 	if OS.get_name() == "Web":
 		# THIS REQUIRES A MANUAL PATCH AFTER EXPORT
-		var err = client.connect_to_url(DEEPGRAM_URL)
+		var err = client.connect_to_url(DEEPGRAM_URL + "?tag=" + tag)
 		if err != OK:
 			print("Unable to connect")
 			emit_signal("message_received", "unable to connect to deepgram;")
@@ -85,7 +85,7 @@ func initialize(api_key):
 	else:
 		print("Connecting to Deepgram with Auth Headers")
 		client.handshake_headers = PackedStringArray(["Authorization: Token " + api_key])
-		var err = client.connect_to_url(DEEPGRAM_URL)
+		var err = client.connect_to_url(DEEPGRAM_URL + "?tag=" + tag)
 		if err != OK:
 			print("Unable to connect")
 			emit_signal("message_received", "unable to connect to deepgram;")
