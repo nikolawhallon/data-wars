@@ -8,6 +8,14 @@ And the game is hosted here (possibly with the password `data-wars`): https://va
 
 ![Screenshot](./screenshot.png)
 
+## Twilio Easter Egg
+
+I also made "Meta Strike" - a little Twilio integration service coded up here: https://github.com/nikolawhallon/meta-strike
+
+It runs at wss://data-wars.deepgram.com and allows you to call +1(734)802-2990 at any time to order a Strike.
+During a Strike, all units and buildings in the game, on both Teams, get destroyed, and everyone has to effectively
+start over again.
+
 ## Linux Builds
 
 The damn Linux export templates for Godot 4.6 seem to have some microphone bug. But the following got builds working:

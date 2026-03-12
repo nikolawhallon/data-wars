@@ -1,9 +1,6 @@
 extends Node2D
 
 # Thursday
-# win condition
-# explosions
-# minerals depleting
 # produce video
 
 # Stretch Goals

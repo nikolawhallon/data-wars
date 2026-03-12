@@ -66,5 +66,13 @@ func _on_area_2d_body_entered(body: Node2D) -> void:
 	if "team" in body and body.team == team:
 		return
 
+	var body_explosion = load("res://scenes/explosion.tscn").instantiate()
+	body_explosion.global_position = global_position
+	get_tree().get_current_scene().add_child(body_explosion)
+
+	var self_explosion = load("res://scenes/explosion.tscn").instantiate()
+	self_explosion.global_position = global_position
+	get_tree().get_current_scene().add_child(self_explosion)
+
 	body.queue_free()
 	queue_free()
