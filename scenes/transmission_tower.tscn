@@ -37,3 +37,5 @@ shape = SubResource("CircleShape2D_fpcqo")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=696363322]
 replication_config = SubResource("SceneReplicationConfig_u3xvk")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

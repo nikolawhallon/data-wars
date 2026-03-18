@@ -6,6 +6,12 @@
 properties/0/path = NodePath(".:data")
 properties/0/spawn = true
 properties/0/replication_mode = 1
+properties/1/path = NodePath(".:clicks")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath(".:minerals")
+properties/2/spawn = true
+properties/2/replication_mode = 1
 
 [node name="Team" type="Node" unique_id=1329451154 groups=["Team"]]
 script = ExtResource("1_hisic")

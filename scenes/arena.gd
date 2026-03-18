@@ -126,9 +126,6 @@ func spawn_team(type: String, id: int) -> void:
 	team.id = id
 	add_child(team)
 
-	if team.is_local_human():
-		$UI.init(team)
-
 @rpc("call_local", "reliable")
 func start_game(seed: int) -> void:
 	$Map.init(seed)
@@ -136,6 +133,21 @@ func start_game(seed: int) -> void:
 
 	if multiplayer.is_server():
 		$Landmarks.init(seed, $Map, $Replicated)
+
+	# this is a bit non-player-number-agnostic :\
+	var first_team = null
+	var second_team = null
+	for team in get_tree().get_nodes_in_group("Team"):
+		if first_team == null:
+			first_team = team
+			continue
+		else:
+			second_team = team
+
+	if first_team == null or second_team == null:
+		print("ERROR - somehow we don't have two teams")
+
+	$UI.init(first_team, second_team)
 
 @rpc("call_local", "reliable")
 func announce_queue_free_node(path: NodePath) -> void:
@@ -198,6 +210,8 @@ func produce_unit_for_peer(peer_id: int) -> void:
 	for data_center in get_tree().get_nodes_in_group("DataCenter"):
 		if team != get_node(data_center.team_path):
 			continue
+		if data_center.producing != "":
+			continue
 		data_center.produce_unit("spam_bot")
 		break
 
@@ -227,6 +241,9 @@ func target_for_peer(peer_id: int) -> void:
 		if team != get_node(spam_bot.team_path):
 			continue
 
+		if spam_bot.target != null:
+			continue
+		
 		var transmission_towers = get_tree().get_nodes_in_group("TransmissionTower")
 		var transmission_tower = transmission_towers.pick_random()
 		if transmission_tower == null:
