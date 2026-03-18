@@ -1,7 +1,7 @@
 extends AnimatedSprite2D
 
 
-signal liters_updated(value)
+signal liters_updated
 
 @export var liters: int = 600:
 	set(value):

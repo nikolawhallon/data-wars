@@ -1,0 +1,65 @@
+[gd_scene format=3 uid="uid://5s72q6dpfwc6"]
+
+[ext_resource type="Script" uid="uid://dqqt5uga88spu" path="res://scenes/spam_bot.gd" id="1_kl1lo"]
+[ext_resource type="Texture2D" uid="uid://d137r33rneh2a" path="res://assets/spam_bot/spam_bot_1.png" id="3_7abbr"]
+[ext_resource type="Texture2D" uid="uid://dt4duwbafrdqw" path="res://assets/spam_bot/spam_bot_2.png" id="4_hwjvk"]
+[ext_resource type="Texture2D" uid="uid://wy063i0su6kl" path="res://assets/spam_bot/spam_bot_3.png" id="5_ffl8a"]
+[ext_resource type="Texture2D" uid="uid://crm7rdab02hec" path="res://assets/spam_bot/spam_bot_4.png" id="6_mrc8k"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nx62t"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_7n53c"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_7abbr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_hwjvk")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_ffl8a")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_mrc8k")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_kl1lo"]
+radius = 8.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_r6ej7"]
+radius = 8.0
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_jgfsr"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:team_path")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath("AnimatedSprite2D:flip_h")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+
+[node name="SpamBot" type="CharacterBody2D" unique_id=552019670 groups=["SpamBot", "Unit"]]
+material = SubResource("ShaderMaterial_nx62t")
+collision_mask = 0
+script = ExtResource("1_kl1lo")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1236178571]
+sprite_frames = SubResource("SpriteFrames_7n53c")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=30827190]
+shape = SubResource("CircleShape2D_kl1lo")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1308226184]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1016676424]
+shape = SubResource("CircleShape2D_r6ej7")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=710060560]
+replication_config = SubResource("SceneReplicationConfig_jgfsr")

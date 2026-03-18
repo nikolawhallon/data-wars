@@ -39,11 +39,17 @@ func _process(delta: float) -> void:
 		var seed = rng.randi()
 		rpc("start_game", seed)
 
-	if state == State.PLAYING and Input.is_action_just_pressed("build"):
+	if state == State.PLAYING and Input.is_action_just_pressed("building"):
 		if multiplayer.is_server():
 			construct_building_for_peer(multiplayer.get_unique_id())
 		else:
 			request_construct_building.rpc_id(1)
+
+	if state == State.PLAYING and Input.is_action_just_pressed("unit"):
+		if multiplayer.is_server():
+			produce_unit_for_peer(multiplayer.get_unique_id())
+		else:
+			request_produce_unit.rpc_id(1)
 
 func host_game() -> bool:
 	var peer := ENetMultiplayerPeer.new()
@@ -159,4 +165,32 @@ func construct_building_for_peer(peer_id: int) -> void:
 		data_center.init(team.get_path(), site.global_position, site.water_path)
 		$Replicated.add_child(data_center, true)
 		announce_queue_free_node.rpc(site.get_path())
+		break
+
+@rpc("any_peer", "reliable")
+func request_produce_unit() -> void:
+	print("request_produce_unit")
+	
+	if not multiplayer.is_server():
+		return
+
+	var peer_id := multiplayer.get_remote_sender_id()
+	produce_unit_for_peer(peer_id)
+
+func produce_unit_for_peer(peer_id: int) -> void:
+	print("produce_unit_for_peer")
+	var team = null
+	for candidate in get_tree().get_nodes_in_group("Team"):
+		if candidate.id == peer_id:
+			team = candidate
+			break
+
+	if team == null:
+		print("No team for peer ", peer_id)
+		return
+
+	for data_center in get_tree().get_nodes_in_group("DataCenter"):
+		if team != get_node(data_center.team_path):
+			continue
+		data_center.produce_unit("spam_bot")
 		break
