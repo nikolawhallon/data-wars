@@ -51,6 +51,12 @@ func _process(delta: float) -> void:
 		else:
 			request_produce_unit.rpc_id(1)
 
+	if state == State.PLAYING and Input.is_action_just_pressed("target"):
+		if multiplayer.is_server():
+			target_for_peer(multiplayer.get_unique_id())
+		else:
+			request_target.rpc_id(1)
+
 func host_game() -> bool:
 	var peer := ENetMultiplayerPeer.new()
 	var err := peer.create_server(PORT, MAX_CLIENTS)
@@ -193,4 +199,37 @@ func produce_unit_for_peer(peer_id: int) -> void:
 		if team != get_node(data_center.team_path):
 			continue
 		data_center.produce_unit("spam_bot")
+		break
+
+@rpc("any_peer", "reliable")
+func request_target() -> void:
+	print("request_target")
+
+	if not multiplayer.is_server():
+		return
+
+	var peer_id := multiplayer.get_remote_sender_id()
+	target_for_peer(peer_id)
+
+func target_for_peer(peer_id: int) -> void:
+	print("target_for_peer")
+	var team = null
+	for candidate in get_tree().get_nodes_in_group("Team"):
+		if candidate.id == peer_id:
+			team = candidate
+			break
+
+	if team == null:
+		print("No team for peer ", peer_id)
+		return
+
+	for spam_bot in get_tree().get_nodes_in_group("SpamBot"):
+		if team != get_node(spam_bot.team_path):
+			continue
+
+		var transmission_towers = get_tree().get_nodes_in_group("TransmissionTower")
+		var transmission_tower = transmission_towers.pick_random()
+		if transmission_tower == null:
+			return
+		spam_bot.target = transmission_tower
 		break
