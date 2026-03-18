@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://b00ej7dif4a57"]
+
+[ext_resource type="PackedScene" uid="uid://bpi3iagfp8f3o" path="res://scenes/map.tscn" id="1_e05a3"]
+[ext_resource type="Script" uid="uid://dweyqo1ml1dhh" path="res://scenes/arena.gd" id="1_olpmc"]
+[ext_resource type="PackedScene" uid="uid://cskaxcuhss7qq" path="res://scenes/helpers/landmarks.tscn" id="2_wl4x5"]
+[ext_resource type="PackedScene" uid="uid://dnm5mgkpu0010" path="res://scenes/ui.tscn" id="4_xdvfk"]
+
+[node name="Arena" type="Node2D" unique_id=299351300]
+script = ExtResource("1_olpmc")
+
+[node name="Map" parent="." unique_id=981697045 instance=ExtResource("1_e05a3")]
+
+[node name="Landmarks" parent="." unique_id=387866990 instance=ExtResource("2_wl4x5")]
+
+[node name="Replicated" type="Node2D" parent="." unique_id=1500467810]
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1203264165]
+_spawnable_scenes = PackedStringArray("uid://cie4t3j8pbmx5", "uid://wr2c42ml2uv5", "uid://cbxlvmqrnim3a", "uid://bls6qhp61hhmy", "uid://b3tp1of0u3u20")
+spawn_path = NodePath("../Replicated")
+
+[node name="UI" parent="." unique_id=1183069547 instance=ExtResource("4_xdvfk")]

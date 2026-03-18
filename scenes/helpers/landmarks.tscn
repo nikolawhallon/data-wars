@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cskaxcuhss7qq"]
+
+[ext_resource type="Script" uid="uid://cfms7mxppnrhw" path="res://scenes/helpers/landmarks.gd" id="1_5hx42"]
+
+[node name="Landmarks" type="Node" unique_id=387866990]
+script = ExtResource("1_5hx42")

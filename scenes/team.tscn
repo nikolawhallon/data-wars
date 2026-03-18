@@ -2,5 +2,15 @@
 
 [ext_resource type="Script" uid="uid://cesoi4rv7uoyi" path="res://scenes/team.gd" id="1_hisic"]
 
-[node name="Team" type="Node" unique_id=1329451154]
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_hisic"]
+properties/0/path = NodePath(".:data")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
+[node name="Team" type="Node" unique_id=1329451154 groups=["Team"]]
 script = ExtResource("1_hisic")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=2063098693]
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1002053596]
+replication_config = SubResource("SceneReplicationConfig_hisic")

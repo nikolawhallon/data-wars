@@ -1,19 +1,11 @@
 [gd_scene format=3 uid="uid://b3tp1of0u3u20"]
 
-[ext_resource type="Shader" uid="uid://b8t74ow17sia1" path="res://scenes/inverse.gdshader" id="1_0o2gg"]
 [ext_resource type="Script" uid="uid://jykvj08xaccd" path="res://scenes/data_center.gd" id="2_brcna"]
 [ext_resource type="Texture2D" uid="uid://w4ovuuoprvgo" path="res://assets/data_center/data_center_idle_1.png" id="3_jl5ch"]
 [ext_resource type="Texture2D" uid="uid://drq0l7apfk7my" path="res://assets/data_center/data_center_producing_1.png" id="4_3elua"]
 [ext_resource type="Texture2D" uid="uid://dsikft8sgunqv" path="res://assets/data_center/data_center_producing_2.png" id="5_ha7m5"]
 [ext_resource type="Texture2D" uid="uid://my8r3cmagknf" path="res://assets/data_center/data_center_producing_3.png" id="6_ryyxn"]
 [ext_resource type="Texture2D" uid="uid://bt0ymt5vysj7y" path="res://assets/data_center/data_center_producing_4.png" id="7_gh7pg"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_ii474"]
-shader = ExtResource("1_0o2gg")
-shader_parameter/pal0 = Color(0.1725, 0.1294, 0.2157, 1)
-shader_parameter/pal1 = Color(0.4627, 0.2667, 0.3843, 1)
-shader_parameter/pal2 = Color(0.6627, 0.4078, 0.4078, 1)
-shader_parameter/pal3 = Color(0.9294, 0.7059, 0.6314, 1)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_57g4l"]
 animations = [{
@@ -46,11 +38,24 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0o2gg"]
 size = Vector2(48, 48)
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_jl5ch"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:water_path")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath(".:producing")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath(".:team_path")
+properties/3/spawn = true
+properties/3/replication_mode = 1
+
 [node name="DataCenter" type="Area2D" unique_id=1727223288 groups=["Building", "DataCenter"]]
 script = ExtResource("2_brcna")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1212827139]
-material = SubResource("ShaderMaterial_ii474")
 sprite_frames = SubResource("SpriteFrames_57g4l")
 animation = &"producing"
 
@@ -62,6 +67,9 @@ wait_time = 10.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=631647662]
 shape = SubResource("RectangleShape2D_0o2gg")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1816174325]
+replication_config = SubResource("SceneReplicationConfig_jl5ch")
 
 [connection signal="timeout" from="WaterTimer" to="." method="_on_water_timer_timeout"]
 [connection signal="timeout" from="UnitTimer" to="." method="_on_unit_timer_timeout"]

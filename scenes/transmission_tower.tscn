@@ -21,7 +21,12 @@ animations = [{
 [sub_resource type="CircleShape2D" id="CircleShape2D_fpcqo"]
 radius = 8.0
 
-[node name="TransmissionTower" type="Area2D" unique_id=476457026 groups=["TransmissionTower"]]
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_u3xvk"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
+[node name="TransmissionTower" type="Area2D" unique_id=476457026 groups=["Landmark", "TransmissionTower"]]
 script = ExtResource("1_fpcqo")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=40894442]
@@ -30,4 +35,5 @@ sprite_frames = SubResource("SpriteFrames_4i1r2")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1571571981]
 shape = SubResource("CircleShape2D_fpcqo")
 
-[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=696363322]
+replication_config = SubResource("SceneReplicationConfig_u3xvk")
