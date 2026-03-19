@@ -28,11 +28,17 @@ func _process(delta: float) -> void:
 		if host_game():
 			print("Changing state to PENDING")
 			state = State.PENDING
-	if state == State.LOBBY and Input.is_action_just_pressed("join"):
-		print("join pressed")
-		if join_game("127.0.0.1"):
+	if state == State.LOBBY and Input.is_action_just_pressed("connect"):
+		print("connect pressed")
+		if connect_game("127.0.0.1"):
 			print("Changing state to PENDING")
 			state = State.PENDING
+	if state == State.LOBBY and Input.is_action_just_pressed("single_player"):
+		print("single_player pressed")
+		create_team_for_peer("human", 1)
+		create_team_for_peer("computer", 2)
+		var seed = rng.randi()
+		rpc("announce_play_game", seed)
 
 	# once all players connect, immediately generate the world for all players
 	# this is a tad clunky, but seems perfectly reasonable for now?
@@ -88,18 +94,18 @@ func host_game() -> bool:
 	multiplayer.multiplayer_peer = peer
 	print("Hosting on port ", PORT)
 
-	create_team_for_peer(1)
+	create_team_for_peer("human", 1)
 	return true
 
-func join_game(ip: String) -> bool:
+func connect_game(ip: String) -> bool:
 	var peer := ENetMultiplayerPeer.new()
 	var err := peer.create_client(ip, PORT)
 	if err != OK:
-		print("Failed to join: ", err)
+		print("Failed to connect: ", err)
 		return false
 
 	multiplayer.multiplayer_peer = peer
-	print("Joining ", ip, ":", PORT)
+	print("Connecting ", ip, ":", PORT)
 	return true
 
 func _on_connected_to_server() -> void:
@@ -118,12 +124,12 @@ func _on_peer_connected(peer_id: int) -> void:
 		return
 
 	# when a peer connects, create a team for them
-	create_team_for_peer(peer_id)
+	create_team_for_peer("human", peer_id)
 
 # server-only - creates a team for a new peer, and broadcasts it to all peers
-func create_team_for_peer(peer_id: int) -> void:
+func create_team_for_peer(type: String, peer_id: int) -> void:
 	# create the team
-	spawn_team("human", peer_id)
+	spawn_team(type, peer_id)
 	# tell all peers about all teams
 	for team in get_tree().get_nodes_in_group("Team"):
 		rpc("announce_team", team.type, team.id)
@@ -147,12 +153,13 @@ func spawn_team(type: String, id: int) -> void:
 	var team = load("res://scenes/team.tscn").instantiate()
 	team.type = type
 	team.id = id
-	if num_teams % 2 == 0:
+	if num_teams % 2 == 1:
 		team.inverted = true
 	add_child(team)
 
 @rpc("call_local", "reliable")
 func announce_play_game(seed: int) -> void:
+	print("announce_play_game")
 	$Map.init(seed)
 	state = State.PLAYING
 
