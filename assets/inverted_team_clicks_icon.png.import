@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dw0rjtta0e0ji"
-path="res://.godot/imported/second_team_clicks_icon.png-9f49974bf927114bacb425ed40702243.ctex"
+path="res://.godot/imported/inverted_team_clicks_icon.png-7bcd6cec610afff416d452a1b32038cf.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/second_team_clicks_icon.png"
-dest_files=["res://.godot/imported/second_team_clicks_icon.png-9f49974bf927114bacb425ed40702243.ctex"]
+source_file="res://assets/inverted_team_clicks_icon.png"
+dest_files=["res://.godot/imported/inverted_team_clicks_icon.png-7bcd6cec610afff416d452a1b32038cf.ctex"]
 
 [params]
 

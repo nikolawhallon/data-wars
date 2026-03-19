@@ -13,4 +13,4 @@ func _on_body_entered(body: Node2D) -> void:
 	
 	var team = get_node(body.team_path)
 	team.clicks += 1
-	get_tree().get_current_scene().announce_queue_free_node.rpc(body.get_path())
+	body.queue_free()

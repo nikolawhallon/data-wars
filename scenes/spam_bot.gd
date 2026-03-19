@@ -8,8 +8,29 @@ const SPEED = 100.0
 # as only the server needs to move units
 var target = null
 
+# remember to call "init" before "add_child" so that team_path
+# is populated by the time "_ready" executes
 func _ready():
 	$AnimatedSprite2D.play("default")
+	apply_team_palette()
+
+func apply_team_palette() -> void:
+	if team_path.is_empty():
+		return
+
+	var team = get_node_or_null(team_path)
+	if team == null:
+		return
+
+	if not team.inverted:
+		return
+
+	$AnimatedSprite2D.material = $AnimatedSprite2D.material.duplicate()
+	var mat := $AnimatedSprite2D.material as ShaderMaterial
+	mat.set_shader_parameter("pal0", Color("#edb4a1"))
+	mat.set_shader_parameter("pal1", Color("#a96868"))
+	mat.set_shader_parameter("pal2", Color("#764462"))
+	mat.set_shader_parameter("pal3", Color("#2c2137"))
 
 func init(initial_team_path, initial_position):
 	global_position = initial_position

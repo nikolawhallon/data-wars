@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://b3tp1of0u3u20"]
 
 [ext_resource type="Script" uid="uid://jykvj08xaccd" path="res://scenes/data_center.gd" id="2_brcna"]
+[ext_resource type="Material" uid="uid://dlqppcpnsen2f" path="res://resources/palette_material.tres" id="2_jl5ch"]
 [ext_resource type="Texture2D" uid="uid://w4ovuuoprvgo" path="res://assets/data_center/data_center_idle_1.png" id="3_jl5ch"]
 [ext_resource type="Texture2D" uid="uid://drq0l7apfk7my" path="res://assets/data_center/data_center_producing_1.png" id="4_3elua"]
 [ext_resource type="Texture2D" uid="uid://dsikft8sgunqv" path="res://assets/data_center/data_center_producing_2.png" id="5_ha7m5"]
@@ -56,6 +57,7 @@ properties/3/replication_mode = 1
 script = ExtResource("2_brcna")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1212827139]
+material = ExtResource("2_jl5ch")
 sprite_frames = SubResource("SpriteFrames_57g4l")
 animation = &"producing"
 

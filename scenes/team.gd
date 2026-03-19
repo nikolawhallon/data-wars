@@ -7,6 +7,7 @@ signal clicks_updated
 
 var type = ""
 var id = -1
+var inverted = false
 
 @export var minerals := 0:
 	set(value):

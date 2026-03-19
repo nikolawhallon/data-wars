@@ -3,8 +3,8 @@
 [ext_resource type="Texture2D" uid="uid://d0ond0cem3yfg" path="res://assets/data_icon.png" id="1_x4jx1"]
 [ext_resource type="Script" uid="uid://cqrw5b2cy66xm" path="res://scenes/ui.gd" id="1_yev5y"]
 [ext_resource type="LabelSettings" uid="uid://ywhly2wm7c3b" path="res://resources/label_16.tres" id="2_yev5y"]
-[ext_resource type="Texture2D" uid="uid://dehm66p6hd38g" path="res://assets/first_team_clicks_icon.png" id="4_wm3ai"]
-[ext_resource type="Texture2D" uid="uid://dw0rjtta0e0ji" path="res://assets/second_team_clicks_icon.png" id="5_8dubc"]
+[ext_resource type="Texture2D" uid="uid://dehm66p6hd38g" path="res://assets/non_inverted_team_clicks_icon.png" id="4_wm3ai"]
+[ext_resource type="Texture2D" uid="uid://dw0rjtta0e0ji" path="res://assets/inverted_team_clicks_icon.png" id="5_8dubc"]
 
 [node name="UI" type="CanvasLayer" unique_id=1183069547]
 script = ExtResource("1_yev5y")
@@ -41,26 +41,45 @@ theme_override_constants/margin_right = 8
 [node name="VBoxContainer" type="VBoxContainer" parent="RightMarginContainer" unique_id=1046204092]
 layout_mode = 2
 
-[node name="FirstTeam" type="HBoxContainer" parent="RightMarginContainer/VBoxContainer" unique_id=1661340997]
+[node name="NonInvertedTeam" type="HBoxContainer" parent="RightMarginContainer/VBoxContainer" unique_id=1661340997]
 layout_mode = 2
 
-[node name="ClicksIcon" type="TextureRect" parent="RightMarginContainer/VBoxContainer/FirstTeam" unique_id=1237195191]
+[node name="ClicksIcon" type="TextureRect" parent="RightMarginContainer/VBoxContainer/NonInvertedTeam" unique_id=1237195191]
 layout_mode = 2
 texture = ExtResource("4_wm3ai")
 
-[node name="ClicksLabel" type="Label" parent="RightMarginContainer/VBoxContainer/FirstTeam" unique_id=29069671]
+[node name="ClicksLabel" type="Label" parent="RightMarginContainer/VBoxContainer/NonInvertedTeam" unique_id=29069671]
 layout_mode = 2
 text = "0"
 label_settings = ExtResource("2_yev5y")
 
-[node name="SecondTeam" type="HBoxContainer" parent="RightMarginContainer/VBoxContainer" unique_id=1717236156]
+[node name="InvertedTeam" type="HBoxContainer" parent="RightMarginContainer/VBoxContainer" unique_id=1717236156]
 layout_mode = 2
 
-[node name="ClicksIcon" type="TextureRect" parent="RightMarginContainer/VBoxContainer/SecondTeam" unique_id=1154224520]
+[node name="ClicksIcon" type="TextureRect" parent="RightMarginContainer/VBoxContainer/InvertedTeam" unique_id=1154224520]
 layout_mode = 2
 texture = ExtResource("5_8dubc")
 
-[node name="ClicksLabel" type="Label" parent="RightMarginContainer/VBoxContainer/SecondTeam" unique_id=1831146726]
+[node name="ClicksLabel" type="Label" parent="RightMarginContainer/VBoxContainer/InvertedTeam" unique_id=1831146726]
 layout_mode = 2
 text = "0"
 label_settings = ExtResource("2_yev5y")
+
+[node name="GameOverLabel" type="Label" parent="." unique_id=1180777436]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -11.5
+offset_right = 20.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "GAME OVER
+WATER DEPLETED
+SHAREHOLDER VALUE GENERATED"
+label_settings = ExtResource("2_yev5y")
+horizontal_alignment = 1

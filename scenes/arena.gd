@@ -8,7 +8,8 @@ var rng = RandomNumberGenerator.new()
 enum State {
 	LOBBY,
 	PENDING,
-	PLAYING
+	PLAYING,
+	GAME_OVER
 }
 
 var state := State.LOBBY
@@ -37,7 +38,7 @@ func _process(delta: float) -> void:
 	# this is a tad clunky, but seems perfectly reasonable for now?
 	if state == State.PENDING and multiplayer.is_server() and len(get_tree().get_nodes_in_group("Team")) == MAX_CLIENTS:
 		var seed = rng.randi()
-		rpc("start_game", seed)
+		rpc("announce_play_game", seed)
 
 	if state == State.PLAYING and Input.is_action_just_pressed("building"):
 		if multiplayer.is_server():
@@ -56,6 +57,26 @@ func _process(delta: float) -> void:
 			target_for_peer(multiplayer.get_unique_id())
 		else:
 			request_target.rpc_id(1)
+
+	var liters = 0
+	for water in get_tree().get_nodes_in_group("Water"):
+		liters += water.liters
+
+	if state == State.PLAYING and multiplayer.is_server() and liters == 0:
+		var most_clicks := -1
+		var winner_ids := []
+
+		for team in get_tree().get_nodes_in_group("Team"):
+			if team.clicks > most_clicks:
+				most_clicks = team.clicks
+				winner_ids = [team.id]
+			elif team.clicks == most_clicks:
+				winner_ids.append(team.id)
+
+		rpc("announce_game_over", winner_ids)
+
+	if state == State.GAME_OVER and multiplayer.is_server():
+		blow_everything_up()
 
 func host_game() -> bool:
 	var peer := ENetMultiplayerPeer.new()
@@ -120,14 +141,18 @@ func announce_team(type: String, id: int) -> void:
 
 	spawn_team(type, id)
 
-func spawn_team(type: String, id: int) -> void:
+func spawn_team(type: String, id: int) -> void:	
+	var num_teams = len(get_tree().get_nodes_in_group("Team"))
+
 	var team = load("res://scenes/team.tscn").instantiate()
 	team.type = type
 	team.id = id
+	if num_teams % 2 == 0:
+		team.inverted = true
 	add_child(team)
 
 @rpc("call_local", "reliable")
-func start_game(seed: int) -> void:
+func announce_play_game(seed: int) -> void:
 	$Map.init(seed)
 	state = State.PLAYING
 
@@ -135,25 +160,41 @@ func start_game(seed: int) -> void:
 		$Landmarks.init(seed, $Map, $Replicated)
 
 	# this is a bit non-player-number-agnostic :\
-	var first_team = null
-	var second_team = null
+	var non_inverted_team = null
+	var inverted_team = null
 	for team in get_tree().get_nodes_in_group("Team"):
-		if first_team == null:
-			first_team = team
-			continue
+		if team.inverted:
+			inverted_team = team
 		else:
-			second_team = team
+			non_inverted_team = team
 
-	if first_team == null or second_team == null:
+	if non_inverted_team == null or inverted_team == null:
 		print("ERROR - somehow we don't have two teams")
 
-	$UI.init(first_team, second_team)
+	$UI.init(non_inverted_team, inverted_team)
 
 @rpc("call_local", "reliable")
-func announce_queue_free_node(path: NodePath) -> void:
-	var node = get_node_or_null(path)
-	if node != null:
-		node.queue_free()
+func announce_game_over(winner_ids) -> void:
+	state = State.GAME_OVER
+	var won = winner_ids.has(multiplayer.get_unique_id())
+	$UI.show_game_over(won)
+
+func blow_everything_up():
+	for unit in get_tree().get_nodes_in_group("Unit"):
+		var explosion = load("res://scenes/explosion.tscn").instantiate()
+		explosion.global_position = unit.global_position
+		$Replicated.add_child(explosion, true)
+		unit.queue_free()
+	for building in get_tree().get_nodes_in_group("Building"):
+		var site = load("res://scenes/site.tscn").instantiate()
+		site.water_path = building.water_path
+		site.global_position = building.global_position
+		$Replicated.add_child(site, true)
+		for i in 10:
+			var explosion = load("res://scenes/explosion.tscn").instantiate()
+			explosion.global_position = building.global_position + Vector2(randf_range(-24.0, 24.0), randf_range(-24.0, 24.0))
+			$Replicated.add_child(explosion, true)
+		building.queue_free()
 
 @rpc("any_peer", "reliable")
 func request_construct_building() -> void:
@@ -179,10 +220,9 @@ func construct_building_for_peer(peer_id: int) -> void:
 
 	for site in get_tree().get_nodes_in_group("Site"):
 		var data_center = load("res://scenes/data_center.tscn").instantiate()
-		data_center.position = site.position
 		data_center.init(team.get_path(), site.global_position, site.water_path)
 		$Replicated.add_child(data_center, true)
-		announce_queue_free_node.rpc(site.get_path())
+		site.queue_free()
 		break
 
 @rpc("any_peer", "reliable")
