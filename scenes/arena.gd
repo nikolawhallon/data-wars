@@ -1,51 +1,18 @@
 extends Node2D
 
-const PORT := 8000
-const MAX_CLIENTS := 2
-
-var rng = RandomNumberGenerator.new()
+var rng := RandomNumberGenerator.new()
 
 enum State {
-	LOBBY,
-	PENDING,
 	PLAYING,
 	GAME_OVER
 }
 
-var state := State.LOBBY
+var state := State.PLAYING
 
 func _ready() -> void:
 	rng.randomize()
 
-	multiplayer.peer_connected.connect(_on_peer_connected)
-	multiplayer.connected_to_server.connect(_on_connected_to_server)
-	multiplayer.connection_failed.connect(_on_connection_failed)
-	multiplayer.server_disconnected.connect(_on_server_disconnected)
-
-func _process(delta: float) -> void:
-	if state == State.LOBBY and Input.is_action_just_pressed("host"):
-		print("host pressed")
-		if host_game():
-			print("Changing state to PENDING")
-			state = State.PENDING
-	if state == State.LOBBY and Input.is_action_just_pressed("connect"):
-		print("connect pressed")
-		if connect_game("127.0.0.1"):
-			print("Changing state to PENDING")
-			state = State.PENDING
-	if state == State.LOBBY and Input.is_action_just_pressed("single_player"):
-		print("single_player pressed")
-		create_team_for_peer("human", 1)
-		create_team_for_peer("computer", 2)
-		var seed = rng.randi()
-		rpc("announce_play_game", seed)
-
-	# once all players connect, immediately generate the world for all players
-	# this is a tad clunky, but seems perfectly reasonable for now?
-	if state == State.PENDING and multiplayer.is_server() and len(get_tree().get_nodes_in_group("Team")) == MAX_CLIENTS:
-		var seed = rng.randi()
-		rpc("announce_play_game", seed)
-
+func _process(_delta: float) -> void:
 	if state == State.PLAYING and Input.is_action_just_pressed("building"):
 		if multiplayer.is_server():
 			construct_building_for_peer(multiplayer.get_unique_id())
@@ -64,7 +31,7 @@ func _process(delta: float) -> void:
 		else:
 			request_target.rpc_id(1)
 
-	var liters = 0
+	var liters := 0
 	for water in get_tree().get_nodes_in_group("Water"):
 		liters += water.liters
 
@@ -84,89 +51,16 @@ func _process(delta: float) -> void:
 	if state == State.GAME_OVER and multiplayer.is_server():
 		blow_everything_up()
 
-func host_game() -> bool:
-	var peer := ENetMultiplayerPeer.new()
-	var err := peer.create_server(PORT, MAX_CLIENTS)
-	if err != OK:
-		print("Failed to host: ", err)
-		return false
+func start_match(seed: int, team_specs: Array) -> void:
+	for team_info in team_specs:
+		spawn_team(team_info["type"], team_info["id"])
 
-	multiplayer.multiplayer_peer = peer
-	print("Hosting on port ", PORT)
-
-	create_team_for_peer("human", 1)
-	return true
-
-func connect_game(ip: String) -> bool:
-	var peer := ENetMultiplayerPeer.new()
-	var err := peer.create_client(ip, PORT)
-	if err != OK:
-		print("Failed to connect: ", err)
-		return false
-
-	multiplayer.multiplayer_peer = peer
-	print("Connecting ", ip, ":", PORT)
-	return true
-
-func _on_connected_to_server() -> void:
-	print("Connected to server")
-
-func _on_connection_failed() -> void:
-	print("Connection failed")
-
-func _on_server_disconnected() -> void:
-	print("Server disconnected")
-
-func _on_peer_connected(peer_id: int) -> void:
-	print("Peer connected: ", peer_id)
-
-	if not multiplayer.is_server():
-		return
-
-	# when a peer connects, create a team for them
-	create_team_for_peer("human", peer_id)
-
-# server-only - creates a team for a new peer, and broadcasts it to all peers
-func create_team_for_peer(type: String, peer_id: int) -> void:
-	# create the team
-	spawn_team(type, peer_id)
-	# tell all peers about all teams
-	for team in get_tree().get_nodes_in_group("Team"):
-		rpc("announce_team", team.type, team.id)
-
-@rpc("call_local", "reliable")
-func announce_team(type: String, id: int) -> void:
-	# because this runs for all teams/peers
-	# everytime a new peer connects, it must be idempotent
-	var has_team = false
-	for child in get_children():
-		if child.has_method("get") and child.get("id") == id:
-			has_team = true
-	if has_team:
-		return
-
-	spawn_team(type, id)
-
-func spawn_team(type: String, id: int) -> void:	
-	var num_teams = len(get_tree().get_nodes_in_group("Team"))
-
-	var team = load("res://scenes/team.tscn").instantiate()
-	team.type = type
-	team.id = id
-	if num_teams % 2 == 1:
-		team.inverted = true
-	add_child(team)
-
-@rpc("call_local", "reliable")
-func announce_play_game(seed: int) -> void:
-	print("announce_play_game")
 	$Map.init(seed)
 	state = State.PLAYING
 
 	if multiplayer.is_server():
 		$Landmarks.init(seed, $Map, $Replicated)
 
-	# this is a bit non-player-number-agnostic :\
 	var non_inverted_team = null
 	var inverted_team = null
 	for team in get_tree().get_nodes_in_group("Team"):
@@ -180,33 +74,50 @@ func announce_play_game(seed: int) -> void:
 
 	$UI.init(non_inverted_team, inverted_team)
 
+func spawn_team(type: String, id: int) -> void:
+	var num_teams = len(get_tree().get_nodes_in_group("Team"))
+
+	var team = load("res://scenes/team.tscn").instantiate()
+	team.type = type
+	team.id = id
+	if num_teams % 2 == 1:
+		team.inverted = true
+	add_child(team)
+
 @rpc("call_local", "reliable")
 func announce_game_over(winner_ids) -> void:
+	print("announce_game_over")
 	state = State.GAME_OVER
 	var won = winner_ids.has(multiplayer.get_unique_id())
 	$UI.show_game_over(won)
 
-func blow_everything_up():
+func blow_everything_up() -> void:
 	for unit in get_tree().get_nodes_in_group("Unit"):
 		var explosion = load("res://scenes/explosion.tscn").instantiate()
 		explosion.global_position = unit.global_position
 		$Replicated.add_child(explosion, true)
 		unit.queue_free()
+
 	for building in get_tree().get_nodes_in_group("Building"):
 		var site = load("res://scenes/site.tscn").instantiate()
 		site.water_path = building.water_path
 		site.global_position = building.global_position
 		$Replicated.add_child(site, true)
+
 		for i in 10:
 			var explosion = load("res://scenes/explosion.tscn").instantiate()
-			explosion.global_position = building.global_position + Vector2(randf_range(-24.0, 24.0), randf_range(-24.0, 24.0))
+			explosion.global_position = building.global_position + Vector2(
+				randf_range(-24.0, 24.0),
+				randf_range(-24.0, 24.0)
+			)
 			$Replicated.add_child(explosion, true)
+
 		building.queue_free()
 
 @rpc("any_peer", "reliable")
 func request_construct_building() -> void:
 	print("request_construct_building")
-	
+
 	if not multiplayer.is_server():
 		return
 
@@ -235,7 +146,7 @@ func construct_building_for_peer(peer_id: int) -> void:
 @rpc("any_peer", "reliable")
 func request_produce_unit() -> void:
 	print("request_produce_unit")
-	
+
 	if not multiplayer.is_server():
 		return
 
@@ -290,10 +201,11 @@ func target_for_peer(peer_id: int) -> void:
 
 		if spam_bot.target != null:
 			continue
-		
+
 		var transmission_towers = get_tree().get_nodes_in_group("TransmissionTower")
 		var transmission_tower = transmission_towers.pick_random()
 		if transmission_tower == null:
 			return
+
 		spam_bot.target = transmission_tower
 		break
