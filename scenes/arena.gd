@@ -51,10 +51,33 @@ func _process(_delta: float) -> void:
 	if state == State.GAME_OVER and multiplayer.is_server():
 		blow_everything_up()
 
-func start_match(seed: int, team_specs: Array) -> void:
-	for team_info in team_specs:
-		spawn_team(team_info["type"], team_info["id"])
+func create_team_for_peer(type: String, peer_id: int) -> void:
+	spawn_team(type, peer_id)
 
+	for team in get_tree().get_nodes_in_group("Team"):
+		rpc("announce_team", team.type, team.id)
+
+func spawn_team(type: String, id: int) -> void:
+	var num_teams = len(get_tree().get_nodes_in_group("Team"))
+
+	var team = load("res://scenes/team.tscn").instantiate()
+	team.type = type
+	team.id = id
+	if num_teams % 2 == 1:
+		team.inverted = true
+	add_child(team)
+
+@rpc("call_local", "reliable")
+func announce_team(type: String, id: int) -> void:
+	for child in get_children():
+		if child.has_method("get") and child.get("id") == id:
+			return
+
+	spawn_team(type, id)
+
+@rpc("call_local", "reliable")
+func announce_play_game(seed: int) -> void:
+	print("announce_play_game")
 	$Map.init(seed)
 	state = State.PLAYING
 
@@ -73,16 +96,6 @@ func start_match(seed: int, team_specs: Array) -> void:
 		print("ERROR - somehow we don't have two teams")
 
 	$UI.init(non_inverted_team, inverted_team)
-
-func spawn_team(type: String, id: int) -> void:
-	var num_teams = len(get_tree().get_nodes_in_group("Team"))
-
-	var team = load("res://scenes/team.tscn").instantiate()
-	team.type = type
-	team.id = id
-	if num_teams % 2 == 1:
-		team.inverted = true
-	add_child(team)
 
 @rpc("call_local", "reliable")
 func announce_game_over(winner_ids) -> void:
@@ -116,16 +129,12 @@ func blow_everything_up() -> void:
 
 @rpc("any_peer", "reliable")
 func request_construct_building() -> void:
-	print("request_construct_building")
-
 	if not multiplayer.is_server():
 		return
 
-	var peer_id := multiplayer.get_remote_sender_id()
-	construct_building_for_peer(peer_id)
+	construct_building_for_peer(multiplayer.get_remote_sender_id())
 
 func construct_building_for_peer(peer_id: int) -> void:
-	print("construct_building_for_peer")
 	var team = null
 	for candidate in get_tree().get_nodes_in_group("Team"):
 		if candidate.id == peer_id:
@@ -145,16 +154,12 @@ func construct_building_for_peer(peer_id: int) -> void:
 
 @rpc("any_peer", "reliable")
 func request_produce_unit() -> void:
-	print("request_produce_unit")
-
 	if not multiplayer.is_server():
 		return
 
-	var peer_id := multiplayer.get_remote_sender_id()
-	produce_unit_for_peer(peer_id)
+	produce_unit_for_peer(multiplayer.get_remote_sender_id())
 
 func produce_unit_for_peer(peer_id: int) -> void:
-	print("produce_unit_for_peer")
 	var team = null
 	for candidate in get_tree().get_nodes_in_group("Team"):
 		if candidate.id == peer_id:
@@ -175,16 +180,12 @@ func produce_unit_for_peer(peer_id: int) -> void:
 
 @rpc("any_peer", "reliable")
 func request_target() -> void:
-	print("request_target")
-
 	if not multiplayer.is_server():
 		return
 
-	var peer_id := multiplayer.get_remote_sender_id()
-	target_for_peer(peer_id)
+	target_for_peer(multiplayer.get_remote_sender_id())
 
 func target_for_peer(peer_id: int) -> void:
-	print("target_for_peer")
 	var team = null
 	for candidate in get_tree().get_nodes_in_group("Team"):
 		if candidate.id == peer_id:
@@ -198,7 +199,6 @@ func target_for_peer(peer_id: int) -> void:
 	for spam_bot in get_tree().get_nodes_in_group("SpamBot"):
 		if team != get_node(spam_bot.team_path):
 			continue
-
 		if spam_bot.target != null:
 			continue
 

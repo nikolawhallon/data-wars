@@ -14,7 +14,7 @@ var arena = null
 var rng := RandomNumberGenerator.new()
 
 # server-side only
-var pending_player_ids: Array[int] = []
+var waiting_peer_ids: Array[int] = []
 
 func _ready() -> void:
 	rng.randomize()
@@ -43,17 +43,8 @@ func _process(_delta: float) -> void:
 	if state == State.LOBBY and Input.is_action_just_pressed("single_player"):
 		start_single_player()
 
-	# server-side: once enough players are waiting, start exactly one match
-	if state == State.PENDING and multiplayer.is_server() and pending_player_ids.size() == MAX_TEAMS:
-		var team_specs: Array = []
-		for peer_id in pending_player_ids:
-			team_specs.append({
-				"type": "human",
-				"id": peer_id,
-			})
-
-		var seed := rng.randi()
-		rpc("announce_start_match", seed, team_specs)
+	if state == State.PENDING and multiplayer.is_server() and waiting_peer_ids.size() == MAX_TEAMS:
+		start_multiplayer(waiting_peer_ids)
 		state = State.PLAYING
 
 func max_connections() -> int:
@@ -71,11 +62,11 @@ func host_game() -> bool:
 	multiplayer.multiplayer_peer = peer
 	print("Hosting on port ", PORT)
 
-	pending_player_ids.clear()
+	waiting_peer_ids.clear()
 
 	# listen server: host is also player 1
 	if DisplayServer.get_name() != "headless":
-		pending_player_ids.append(1)
+		waiting_peer_ids.append(1)
 
 	return true
 
@@ -91,14 +82,22 @@ func connect_game(ip: String) -> bool:
 	return true
 
 func start_single_player() -> void:
-	var team_specs: Array = [
-		{"type": "human", "id": 1},
-		{"type": "computer", "id": 2},
-	]
+	create_arena()
+	arena.create_team_for_peer("human", 1)
+	arena.create_team_for_peer("computer", 2)
 
 	var seed := rng.randi()
-	rpc("announce_start_match", seed, team_specs)
+	arena.rpc("announce_play_game", seed)
 	state = State.PLAYING
+
+func start_multiplayer(peer_ids: Array[int]) -> void:
+	create_arena()
+
+	for peer_id in peer_ids:
+		arena.create_team_for_peer("human", peer_id)
+
+	var seed := rng.randi()
+	arena.rpc("announce_play_game", seed)
 
 func create_arena() -> void:
 	if arena != null:
@@ -106,13 +105,6 @@ func create_arena() -> void:
 
 	arena = load("res://scenes/arena.tscn").instantiate()
 	$Matches.add_child(arena)
-
-@rpc("call_local", "reliable")
-func announce_start_match(seed: int, team_specs: Array) -> void:
-	print("announce_start_match")
-	create_arena()
-	arena.start_match(seed, team_specs)
-	state = State.PLAYING
 
 func _on_peer_connected(peer_id: int) -> void:
 	print("Peer connected: ", peer_id)
@@ -123,10 +115,10 @@ func _on_peer_connected(peer_id: int) -> void:
 	if state != State.PENDING:
 		return
 
-	if pending_player_ids.has(peer_id):
+	if waiting_peer_ids.has(peer_id):
 		return
 
-	pending_player_ids.append(peer_id)
+	waiting_peer_ids.append(peer_id)
 
 func _on_connected_to_server() -> void:
 	print("Connected to server")
