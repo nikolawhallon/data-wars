@@ -26,6 +26,9 @@ func _ready() -> void:
 	rng.randomize()
 
 func _process(_delta: float) -> void:
+	if Input.is_action_just_pressed("leave"):
+		pass
+
 	if state == State.PLAYING and Input.is_action_just_pressed("building"):
 		if multiplayer.is_server():
 			construct_building_for_peer(multiplayer.get_unique_id())
@@ -48,7 +51,7 @@ func _process(_delta: float) -> void:
 	for water in find_in_subtree("Water"):
 		liters += water.liters
 
-	if state == State.PLAYING and multiplayer.is_server() and liters == 0:
+	if state == State.PLAYING and multiplayer.is_server() and liters == 0 and false:
 		var most_clicks := -1
 		var winner_ids := []
 
@@ -85,7 +88,7 @@ func announce_team(type: String, id: int) -> void:
 
 @rpc("call_local", "reliable")
 func announce_play_game(seed: int) -> void:
-	print("announce_play_game")
+	print("announce_play_game for peer: ", multiplayer.get_unique_id())
 	$Map.init(seed)
 	state = State.PLAYING
 
