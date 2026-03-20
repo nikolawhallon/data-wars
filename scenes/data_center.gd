@@ -71,7 +71,7 @@ func _on_unit_timer_timeout() -> void:
 			rng.randf_range(-64.0, 64.0),
 			rng.randf_range(-64.0, 64.0)
 		))
-		get_tree().get_current_scene().get_node("Replicated").add_child(spam_bot, true)
+		get_parent().add_child(spam_bot, true)
 
 	producing = ""
 

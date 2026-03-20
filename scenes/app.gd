@@ -1,20 +1,12 @@
 extends Node
 
-const PORT := 8000
 const MAX_TEAMS := 2
+const MAX_MATCHES := 5
 
-enum State {
-	LOBBY,
-	PENDING,
-	PLAYING,
-}
-
-var state := State.LOBBY
-var arena = null
 var rng := RandomNumberGenerator.new()
 
-# server-side only
 var waiting_peer_ids: Array[int] = []
+var arenas: Array = []
 
 func _ready() -> void:
 	rng.randomize()
@@ -27,84 +19,26 @@ func _ready() -> void:
 	print(DisplayServer.get_name())
 
 	if DisplayServer.get_name() == "headless":
-		if host_game():
-			print("Headless hosting")
-			state = State.PENDING
+		# TODO: get the port from some command-line argument or environment variable
+		host_game(8000)
 
 func _process(_delta: float) -> void:
-	if state == State.LOBBY and Input.is_action_just_pressed("host"):
-		if host_game():
-			state = State.PENDING
-
-	if state == State.LOBBY and Input.is_action_just_pressed("connect"):
-		if connect_game("127.0.0.1"):
-			state = State.PENDING
-
-	if state == State.LOBBY and Input.is_action_just_pressed("single_player"):
-		start_single_player()
-
-	if state == State.PENDING and multiplayer.is_server() and waiting_peer_ids.size() == MAX_TEAMS:
-		start_multiplayer(waiting_peer_ids)
-		state = State.PLAYING
-
-func max_connections() -> int:
 	if DisplayServer.get_name() == "headless":
-		return MAX_TEAMS + 1
-	return MAX_TEAMS
-
-func host_game() -> bool:
-	var peer := ENetMultiplayerPeer.new()
-	var err := peer.create_server(PORT, max_connections())
-	if err != OK:
-		print("Failed to host: ", err)
-		return false
-
-	multiplayer.multiplayer_peer = peer
-	print("Hosting on port ", PORT)
-
-	waiting_peer_ids.clear()
-
-	# listen server: host is also player 1
-	if DisplayServer.get_name() != "headless":
-		waiting_peer_ids.append(1)
-
-	return true
-
-func connect_game(ip: String) -> bool:
-	var peer := ENetMultiplayerPeer.new()
-	var err := peer.create_client(ip, PORT)
-	if err != OK:
-		print("Failed to connect: ", err)
-		return false
-
-	multiplayer.multiplayer_peer = peer
-	print("Connecting ", ip, ":", PORT)
-	return true
-
-func start_single_player() -> void:
-	create_arena()
-	arena.create_team_for_peer("human", 1)
-	arena.create_team_for_peer("computer", 2)
-
-	var seed := rng.randi()
-	arena.rpc("announce_play_game", seed)
-	state = State.PLAYING
-
-func start_multiplayer(peer_ids: Array[int]) -> void:
-	create_arena()
-
-	for peer_id in peer_ids:
-		arena.create_team_for_peer("human", peer_id)
-
-	var seed := rng.randi()
-	arena.rpc("announce_play_game", seed)
-
-func create_arena() -> void:
-	if arena != null:
 		return
 
-	arena = load("res://scenes/arena.tscn").instantiate()
-	$Matches.add_child(arena)
+	if Input.is_action_just_pressed("host"):
+		# TODO: allow player to input port
+		host_game(8000)
+
+	if Input.is_action_just_pressed("connect"):
+		# TODO: allow player to input ip and port
+		connect_game("127.0.0.1", 8000)
+
+	if Input.is_action_just_pressed("single_player"):
+		var type_id_pairs = []
+		type_id_pairs.append({"type": "human", "id": 1})
+		type_id_pairs.append({"type": "computer", "id": 2})
+		rpc("announce_start_match", type_id_pairs, rng.randi())
 
 func _on_peer_connected(peer_id: int) -> void:
 	print("Peer connected: ", peer_id)
@@ -112,13 +46,12 @@ func _on_peer_connected(peer_id: int) -> void:
 	if not multiplayer.is_server():
 		return
 
-	if state != State.PENDING:
-		return
-
 	if waiting_peer_ids.has(peer_id):
 		return
 
 	waiting_peer_ids.append(peer_id)
+	# every time a peer connects, check if we can start a new match 
+	try_match_making()
 
 func _on_connected_to_server() -> void:
 	print("Connected to server")
@@ -128,3 +61,62 @@ func _on_connection_failed() -> void:
 
 func _on_server_disconnected() -> void:
 	print("Server disconnected")
+
+func host_game(port) -> bool:
+	if multiplayer.multiplayer_peer is ENetMultiplayerPeer:
+		# if not headless, it's possible the player triggered "host" more than once
+		return true
+
+	var max_connections = MAX_TEAMS
+	if DisplayServer.get_name() == "headless":
+		max_connections = MAX_MATCHES * MAX_TEAMS + 1
+
+	var peer := ENetMultiplayerPeer.new()
+	var err := peer.create_server(port, max_connections)
+	if err != OK:
+		print("Failed to host: ", err)
+		return false
+
+	multiplayer.multiplayer_peer = peer
+	print("Hosting on port ", port)
+
+	# if not headless, the host is also a waiting player
+	if DisplayServer.get_name() != "headless" and not waiting_peer_ids.has(1):
+		waiting_peer_ids.append(1)
+
+	return true
+
+func connect_game(ip: String, port: int) -> bool:
+	var peer := ENetMultiplayerPeer.new()
+	var err := peer.create_client(ip, port)
+	if err != OK:
+		print("Failed to connect: ", err)
+		return false
+
+	multiplayer.multiplayer_peer = peer
+	print("Connecting ", ip, ":", port)
+	
+	return true
+
+# start multiplayer matches by pulling pairs of peers off waiting_peer_ids
+func try_match_making() -> void:
+	while waiting_peer_ids.size() >= MAX_TEAMS:
+		var type_id_pairs = []
+		for i in MAX_TEAMS:
+			type_id_pairs.append({"type": "human", "id": waiting_peer_ids.pop_front()})
+
+		rpc("announce_start_match", type_id_pairs, rng.randi())
+
+@rpc("call_local", "reliable")
+func announce_start_match(type_id_pairs, seed: int) -> void:
+	var arena = load("res://scenes/arena.tscn").instantiate()
+	$Matches.add_child(arena, true)
+
+	# maybe this should only happen for "headless"?
+	if multiplayer.is_server():
+		arenas.append(arena)
+
+	for type_id_pair in type_id_pairs:
+		arena.announce_team(type_id_pair["type"], type_id_pair["id"])
+
+	arena.announce_play_game(seed)

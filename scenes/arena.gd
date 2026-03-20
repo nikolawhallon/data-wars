@@ -51,13 +51,12 @@ func _process(_delta: float) -> void:
 	if state == State.GAME_OVER and multiplayer.is_server():
 		blow_everything_up()
 
-func create_team_for_peer(type: String, peer_id: int) -> void:
-	spawn_team(type, peer_id)
+@rpc("call_local", "reliable")
+func announce_team(type: String, id: int) -> void:
+	for child in get_children():
+		if child.has_method("get") and child.get("id") == id:
+			return
 
-	for team in get_tree().get_nodes_in_group("Team"):
-		rpc("announce_team", team.type, team.id)
-
-func spawn_team(type: String, id: int) -> void:
 	var num_teams = len(get_tree().get_nodes_in_group("Team"))
 
 	var team = load("res://scenes/team.tscn").instantiate()
@@ -66,14 +65,6 @@ func spawn_team(type: String, id: int) -> void:
 	if num_teams % 2 == 1:
 		team.inverted = true
 	add_child(team)
-
-@rpc("call_local", "reliable")
-func announce_team(type: String, id: int) -> void:
-	for child in get_children():
-		if child.has_method("get") and child.get("id") == id:
-			return
-
-	spawn_team(type, id)
 
 @rpc("call_local", "reliable")
 func announce_play_game(seed: int) -> void:
