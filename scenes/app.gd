@@ -6,8 +6,19 @@ const MAX_MATCHES := 5
 var rng := RandomNumberGenerator.new()
 
 var waiting_peer_ids: Array[int] = []
-var next_match_id := 1
-var pending_matches := {} # match_id -> {"type_id_pairs": Array, "seed": int, "ready_peer_ids": Array[int]}
+
+# match_id -> {
+#   "proto_teams": Array[Dictionary], # {"type": String, "id": int, "ready": bool}
+#   "seed": int
+# }
+var pending_matches := {}
+
+func find_arena_for_peer(peer_id: int) -> Node:
+	for arena in $Matches.get_children():
+		for team in arena.find_in_subtree("Team"):
+			if team.id == peer_id:
+				return arena
+	return null
 
 func _ready() -> void:
 	rng.randomize()
@@ -20,7 +31,6 @@ func _ready() -> void:
 	print(DisplayServer.get_name())
 
 	if DisplayServer.get_name() == "headless":
-		# TODO: get the port from some command-line argument or environment variable
 		host_game(8000)
 
 func _process(_delta: float) -> void:
@@ -28,30 +38,26 @@ func _process(_delta: float) -> void:
 		return
 
 	if Input.is_action_just_pressed("host"):
-		# TODO: allow player to input port
 		host_game(8000)
 
 	if Input.is_action_just_pressed("connect"):
-		# TODO: allow player to input ip and port
 		connect_game("127.0.0.1", 8000)
 
 	if Input.is_action_just_pressed("single_player"):
-		var match_id := next_match_id
-		next_match_id += 1
+		var proto_teams = [
+			{"type": "human", "id": 1, "ready": false},
+			{"type": "computer", "id": 2, "ready": true}, # this feels hacky
+		]
 
-		var type_id_pairs = []
-		type_id_pairs.append({"type": "human", "id": 1})
-		type_id_pairs.append({"type": "computer", "id": 2})
+		var match_id := rng.randi()
+		var seed := rng.randi()
 
-		var seed = rng.randi()
 		pending_matches[match_id] = {
-			"type_id_pairs": type_id_pairs,
+			"proto_teams": proto_teams,
 			"seed": seed,
-			"ready_peer_ids": []
 		}
 
-		announce_start_match.rpc_id(1, match_id, type_id_pairs)
-		announce_begin_match.rpc_id(1, match_id, seed)
+		announce_boot_arena.rpc_id(1, match_id, proto_teams)
 
 func _on_peer_connected(peer_id: int) -> void:
 	print("Peer connected: ", peer_id)
@@ -74,9 +80,13 @@ func _on_connection_failed() -> void:
 func _on_server_disconnected() -> void:
 	print("Server disconnected")
 
+	for arena in $Matches.get_children():
+		arena.queue_free()
+
+	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+
 func host_game(port: int) -> bool:
 	if multiplayer.multiplayer_peer is ENetMultiplayerPeer:
-		# if not headless, it's possible the player triggered "host" more than once
 		return true
 
 	var max_connections := MAX_TEAMS
@@ -92,7 +102,6 @@ func host_game(port: int) -> bool:
 	multiplayer.multiplayer_peer = peer
 	print("Hosting on port ", port)
 
-	# if not headless, the host is also a waiting player
 	if DisplayServer.get_name() != "headless" and not waiting_peer_ids.has(1):
 		waiting_peer_ids.append(1)
 
@@ -110,81 +119,123 @@ func connect_game(ip: String, port: int) -> bool:
 
 	return true
 
-# start multiplayer matches by pulling pairs of peers off waiting_peer_ids
 func try_match_making() -> void:
 	while waiting_peer_ids.size() >= MAX_TEAMS:
-		var match_id := next_match_id
-		next_match_id += 1
-
-		var type_id_pairs = []
+		var proto_teams := []
 		for i in MAX_TEAMS:
-			type_id_pairs.append({"type": "human", "id": waiting_peer_ids.pop_front()})
+			proto_teams.append({
+				"type": "human",
+				"id": waiting_peer_ids.pop_front(),
+				"ready": false,
+			})
 
+		var match_id := rng.randi()
+		# ensure no match_id collisions
+		while pending_matches.has(match_id):
+			match_id = rng.randi()
 		var seed := rng.randi()
+
 		pending_matches[match_id] = {
-			"type_id_pairs": type_id_pairs,
+			"proto_teams": proto_teams,
 			"seed": seed,
-			"ready_peer_ids": []
 		}
 
 		if DisplayServer.get_name() == "headless":
-			announce_start_match.rpc_id(1, match_id, type_id_pairs)
+			announce_boot_arena.rpc_id(1, match_id, proto_teams)
 
-		for type_id_pair in type_id_pairs:
-			announce_start_match.rpc_id(type_id_pair["id"], match_id, type_id_pairs)
+		for proto_team in proto_teams:
+			announce_boot_arena.rpc_id(proto_team["id"], match_id, proto_teams)
 
 @rpc("call_local", "reliable")
-func announce_start_match(match_id: int, type_id_pairs) -> void:
-	print("announce_start_match for peer: ", multiplayer.get_unique_id())
-
+func announce_boot_arena(match_id: int, proto_teams: Array) -> void:
 	var arena = load("res://scenes/arena.tscn").instantiate()
 	arena.name = "Arena_%d" % match_id
 	$Matches.add_child(arena, true)
+	arena.leave_requested.connect(_on_arena_leave_requested.bind(arena))
 
-	for type_id_pair in type_id_pairs:
-		arena.announce_team(type_id_pair["type"], type_id_pair["id"])
+	for proto_team in proto_teams:
+		arena.announce_team(proto_team["type"], proto_team["id"])
 
-	# Whoever just created the arena is now ready.
 	if multiplayer.is_server():
-		_report_match_ready(match_id, multiplayer.get_unique_id())
+		mark_match_ready_for_peer(multiplayer.get_unique_id(), match_id)
 	else:
-		report_match_ready.rpc_id(1, match_id)
+		request_mark_match_ready.rpc_id(1, match_id)
 
 @rpc("any_peer", "reliable")
-func report_match_ready(match_id: int) -> void:
+func request_mark_match_ready(match_id: int) -> void:
 	if not multiplayer.is_server():
 		return
 
-	_report_match_ready(match_id, multiplayer.get_remote_sender_id())
+	mark_match_ready_for_peer(multiplayer.get_remote_sender_id(), match_id)
 
-func _report_match_ready(match_id: int, peer_id: int) -> void:
+func mark_match_ready_for_peer(peer_id: int, match_id: int) -> void:
 	if not pending_matches.has(match_id):
+		print("WARN - pending_matches does not have this match_id: ", match_id)
 		return
 
-	var ready_peer_ids = pending_matches[match_id]["ready_peer_ids"]
-	if ready_peer_ids.has(peer_id):
-		return
+	var proto_teams: Array = pending_matches[match_id]["proto_teams"]
 
-	ready_peer_ids.append(peer_id)
+	for proto_team in proto_teams:
+		if proto_team["id"] == peer_id:
+			proto_team["ready"] = true
+			break
 
-	if ready_peer_ids.size() < MAX_TEAMS:
-		return
+	for proto_team in proto_teams:
+		if not proto_team["ready"]:
+			return
 
 	var seed: int = pending_matches[match_id]["seed"]
-	var type_id_pairs = pending_matches[match_id]["type_id_pairs"]
 
-	# In headless mode, peer 1 is the authoritative server arena.
 	if DisplayServer.get_name() == "headless":
-		announce_begin_match.rpc_id(1, match_id, seed)
+		announce_start_match.rpc_id(1, match_id, seed)
 
-	for type_id_pair in type_id_pairs:
-		announce_begin_match.rpc_id(type_id_pair["id"], match_id, seed)
+	for proto_team in proto_teams:
+		announce_start_match.rpc_id(proto_team["id"], match_id, seed)
 
 	pending_matches.erase(match_id)
 
 @rpc("call_local", "reliable")
-func announce_begin_match(match_id: int, seed: int) -> void:
-	print("announce_begin_match for peer: ", multiplayer.get_unique_id())
-
+func announce_start_match(match_id: int, seed: int) -> void:
 	var arena = $Matches.get_node("Arena_%d" % match_id)
 	arena.announce_play_game(seed)
+
+func _on_arena_leave_requested(arena):
+	if multiplayer.is_server():
+		leave_match_for_peer(multiplayer.get_unique_id())
+	else:
+		request_leave_match.rpc_id(1)
+
+@rpc("any_peer", "reliable")
+func request_leave_match() -> void:
+	if not multiplayer.is_server():
+		return
+
+	leave_match_for_peer(multiplayer.get_remote_sender_id())
+
+func leave_match_for_peer(peer_id: int) -> void:
+	var arena := find_arena_for_peer(peer_id)
+	if arena == null:
+		print("WARN - no arena for peer ", peer_id)
+		return
+
+	var peer_ids := []
+	for team in arena.find_in_subtree("Team"):
+		peer_ids.append(team.id)
+
+	if DisplayServer.get_name() == "headless":
+		announce_leave_match.rpc_id(1, arena.name)
+
+	for id in peer_ids:
+		announce_leave_match.rpc_id(id, arena.name)
+
+	print("Freeing arena for: ", peer_id)
+	arena.queue_free()
+
+@rpc("call_local", "reliable")
+func announce_leave_match(arena_name: String) -> void:
+	print("Freeing arena for: ", multiplayer.get_unique_id())
+	if $Matches.has_node(arena_name):
+		$Matches.get_node(arena_name).queue_free()
+
+	if DisplayServer.get_name() != "headless":
+		multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()

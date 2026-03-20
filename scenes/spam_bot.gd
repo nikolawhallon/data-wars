@@ -8,6 +8,7 @@ const SPEED = 100.0
 # as only the server needs to move units
 var target = null
 
+# TODO: extract this into some utils
 func get_arena() -> Node:
 	var candidate: Node = self
 	while candidate != null:

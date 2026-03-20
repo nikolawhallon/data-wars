@@ -1,5 +1,7 @@
 extends Node2D
 
+signal leave_requested
+
 var rng := RandomNumberGenerator.new()
 
 enum State {
@@ -9,6 +11,7 @@ enum State {
 
 var state := State.PLAYING
 
+# TODO: extract this into some utils
 func find_in_subtree(group_name: String) -> Array:
 	var out := []
 	var stack := [self]
@@ -27,7 +30,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if Input.is_action_just_pressed("leave"):
-		pass
+		emit_signal("leave_requested")
 
 	if state == State.PLAYING and Input.is_action_just_pressed("building"):
 		if multiplayer.is_server():
