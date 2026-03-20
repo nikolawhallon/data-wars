@@ -8,6 +8,14 @@ const SPEED = 100.0
 # as only the server needs to move units
 var target = null
 
+func get_arena() -> Node:
+	var candidate: Node = self
+	while candidate != null:
+		if candidate.is_in_group("Arena"):
+			return candidate
+		candidate = candidate.get_parent()
+	return null
+
 # remember to call "init" before "add_child" so that team_path
 # is populated by the time "_ready" executes
 func _ready():
@@ -43,7 +51,7 @@ func _physics_process(_delta: float) -> void:
 	var target_position = null
 
 	if target == null:
-		for transmission_tower in get_tree().get_nodes_in_group("TransmissionTower"):
+		for transmission_tower in get_arena().find_in_subtree("TransmissionTower"):
 			var distance = global_position.distance_to(transmission_tower.global_position)
 			if distance < 256:
 				target = transmission_tower

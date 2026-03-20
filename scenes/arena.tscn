@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://cskaxcuhss7qq" path="res://scenes/helpers/landmarks.tscn" id="2_wl4x5"]
 [ext_resource type="PackedScene" uid="uid://dnm5mgkpu0010" path="res://scenes/ui.tscn" id="4_xdvfk"]
 
-[node name="Arena" type="Node2D" unique_id=299351300]
+[node name="Arena" type="Node2D" unique_id=299351300 groups=["Arena"]]
 script = ExtResource("1_olpmc")
 
 [node name="Map" parent="." unique_id=981697045 instance=ExtResource("1_e05a3")]

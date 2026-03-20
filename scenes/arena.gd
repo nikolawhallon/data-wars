@@ -9,6 +9,19 @@ enum State {
 
 var state := State.PLAYING
 
+func find_in_subtree(group_name: String) -> Array:
+	var out := []
+	var stack := [self]
+
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		for child in node.get_children():
+			if child.is_in_group(group_name):
+				out.append(child)
+			stack.append(child)
+
+	return out
+
 func _ready() -> void:
 	rng.randomize()
 
@@ -32,23 +45,27 @@ func _process(_delta: float) -> void:
 			request_target.rpc_id(1)
 
 	var liters := 0
-	for water in get_tree().get_nodes_in_group("Water"):
+	for water in find_in_subtree("Water"):
 		liters += water.liters
 
 	if state == State.PLAYING and multiplayer.is_server() and liters == 0:
 		var most_clicks := -1
 		var winner_ids := []
 
-		for team in get_tree().get_nodes_in_group("Team"):
+		for team in find_in_subtree("Team"):
 			if team.clicks > most_clicks:
 				most_clicks = team.clicks
 				winner_ids = [team.id]
 			elif team.clicks == most_clicks:
 				winner_ids.append(team.id)
 
-		rpc("announce_game_over", winner_ids)
-
+		if DisplayServer.get_name() == "headless":
+			announce_game_over.rpc_id(1, winner_ids)
+		for team in find_in_subtree("Team"):
+			announce_game_over.rpc_id(team.id, winner_ids)
+ 
 	if state == State.GAME_OVER and multiplayer.is_server():
+		# yes, this blows everything up all the time, if state is GAME_OVER, this is on purpose
 		blow_everything_up()
 
 @rpc("call_local", "reliable")
@@ -57,7 +74,7 @@ func announce_team(type: String, id: int) -> void:
 		if child.has_method("get") and child.get("id") == id:
 			return
 
-	var num_teams = len(get_tree().get_nodes_in_group("Team"))
+	var num_teams = len(find_in_subtree("Team"))
 
 	var team = load("res://scenes/team.tscn").instantiate()
 	team.type = type
@@ -77,7 +94,7 @@ func announce_play_game(seed: int) -> void:
 
 	var non_inverted_team = null
 	var inverted_team = null
-	for team in get_tree().get_nodes_in_group("Team"):
+	for team in find_in_subtree("Team"):
 		if team.inverted:
 			inverted_team = team
 		else:
@@ -96,13 +113,13 @@ func announce_game_over(winner_ids) -> void:
 	$UI.show_game_over(won)
 
 func blow_everything_up() -> void:
-	for unit in get_tree().get_nodes_in_group("Unit"):
+	for unit in find_in_subtree("Unit"):
 		var explosion = load("res://scenes/explosion.tscn").instantiate()
 		explosion.global_position = unit.global_position
 		$Replicated.add_child(explosion, true)
 		unit.queue_free()
 
-	for building in get_tree().get_nodes_in_group("Building"):
+	for building in find_in_subtree("Building"):
 		var site = load("res://scenes/site.tscn").instantiate()
 		site.water_path = building.water_path
 		site.global_position = building.global_position
@@ -127,7 +144,7 @@ func request_construct_building() -> void:
 
 func construct_building_for_peer(peer_id: int) -> void:
 	var team = null
-	for candidate in get_tree().get_nodes_in_group("Team"):
+	for candidate in find_in_subtree("Team"):
 		if candidate.id == peer_id:
 			team = candidate
 			break
@@ -136,7 +153,7 @@ func construct_building_for_peer(peer_id: int) -> void:
 		print("No team for peer ", peer_id)
 		return
 
-	for site in get_tree().get_nodes_in_group("Site"):
+	for site in find_in_subtree("Site"):
 		var data_center = load("res://scenes/data_center.tscn").instantiate()
 		data_center.init(team.get_path(), site.global_position, site.water_path)
 		$Replicated.add_child(data_center, true)
@@ -152,7 +169,7 @@ func request_produce_unit() -> void:
 
 func produce_unit_for_peer(peer_id: int) -> void:
 	var team = null
-	for candidate in get_tree().get_nodes_in_group("Team"):
+	for candidate in find_in_subtree("Team"):
 		if candidate.id == peer_id:
 			team = candidate
 			break
@@ -161,7 +178,7 @@ func produce_unit_for_peer(peer_id: int) -> void:
 		print("No team for peer ", peer_id)
 		return
 
-	for data_center in get_tree().get_nodes_in_group("DataCenter"):
+	for data_center in find_in_subtree("DataCenter"):
 		if team != get_node(data_center.team_path):
 			continue
 		if data_center.producing != "":
@@ -178,7 +195,7 @@ func request_target() -> void:
 
 func target_for_peer(peer_id: int) -> void:
 	var team = null
-	for candidate in get_tree().get_nodes_in_group("Team"):
+	for candidate in find_in_subtree("Team"):
 		if candidate.id == peer_id:
 			team = candidate
 			break
@@ -187,13 +204,13 @@ func target_for_peer(peer_id: int) -> void:
 		print("No team for peer ", peer_id)
 		return
 
-	for spam_bot in get_tree().get_nodes_in_group("SpamBot"):
+	for spam_bot in find_in_subtree("SpamBot"):
 		if team != get_node(spam_bot.team_path):
 			continue
 		if spam_bot.target != null:
 			continue
 
-		var transmission_towers = get_tree().get_nodes_in_group("TransmissionTower")
+		var transmission_towers = find_in_subtree("TransmissionTower")
 		var transmission_tower = transmission_towers.pick_random()
 		if transmission_tower == null:
 			return

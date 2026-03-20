@@ -6,7 +6,6 @@ const MAX_MATCHES := 5
 var rng := RandomNumberGenerator.new()
 
 var waiting_peer_ids: Array[int] = []
-var arenas: Array = []
 
 func _ready() -> void:
 	rng.randomize()
@@ -38,7 +37,7 @@ func _process(_delta: float) -> void:
 		var type_id_pairs = []
 		type_id_pairs.append({"type": "human", "id": 1})
 		type_id_pairs.append({"type": "computer", "id": 2})
-		rpc("announce_start_match", type_id_pairs, rng.randi())
+		announce_start_match.rpc_id(1, type_id_pairs, rng.randi())
 
 func _on_peer_connected(peer_id: int) -> void:
 	print("Peer connected: ", peer_id)
@@ -105,16 +104,16 @@ func try_match_making() -> void:
 		for i in MAX_TEAMS:
 			type_id_pairs.append({"type": "human", "id": waiting_peer_ids.pop_front()})
 
-		rpc("announce_start_match", type_id_pairs, rng.randi())
+		var seed = rng.randi()
+		if DisplayServer.get_name() == "headless":
+			announce_start_match.rpc_id(1, type_id_pairs, seed)
+		for type_id_pair in type_id_pairs:
+			announce_start_match.rpc_id(type_id_pair["id"], type_id_pairs, seed)
 
 @rpc("call_local", "reliable")
 func announce_start_match(type_id_pairs, seed: int) -> void:
 	var arena = load("res://scenes/arena.tscn").instantiate()
 	$Matches.add_child(arena, true)
-
-	# maybe this should only happen for "headless"?
-	if multiplayer.is_server():
-		arenas.append(arena)
 
 	for type_id_pair in type_id_pairs:
 		arena.announce_team(type_id_pair["type"], type_id_pair["id"])
