@@ -12,9 +12,9 @@ enum State {
 var state := State.PLAYING
 
 # TODO: extract this into some utils
-func find_in_subtree(group_name: String) -> Array:
-	var out := []
-	var stack := [self]
+func find_in_subtree(group_name):
+	var out = []
+	var stack = [self]
 
 	while not stack.is_empty():
 		var node: Node = stack.pop_back()
@@ -25,15 +25,8 @@ func find_in_subtree(group_name: String) -> Array:
 
 	return out
 
-# TODO: extract this into some utils
-func get_peer_ids():
-	var peer_ids := []
-	for team in find_in_subtree("Team"):
-		peer_ids.append(team.id)
-	return peer_ids
-
 func get_match_peer_ids():
-	var match_peer_ids := []
+	var match_peer_ids = []
 	for team in find_in_subtree("Team"):
 		match_peer_ids.append(team.id)
 	return match_peer_ids
@@ -88,7 +81,7 @@ func _process(_delta: float) -> void:
 		blow_everything_up()
 
 @rpc("call_local", "reliable")
-func announce_team(match_peer_ids, type: String, id: int) -> void:
+func announce_team(match_peer_ids, type, id):
 	for child in get_children():
 		if child.has_method("get") and child.get("id") == id:
 			return
@@ -104,13 +97,13 @@ func announce_team(match_peer_ids, type: String, id: int) -> void:
 	add_child(team, true)
 
 @rpc("call_local", "reliable")
-func announce_play_game(seed: int) -> void:
-	print("announce_play_game for peer: ", multiplayer.get_unique_id())
-	$Map.init(seed)
+func announce_play_game(random_seed):
+	print("announce_play_game for peer id: ", multiplayer.get_unique_id())
+	$Map.init(random_seed)
 	state = State.PLAYING
 
 	if multiplayer.is_server():
-		$Landmarks.init(seed, $Map, $Replicated, get_match_peer_ids())
+		$Landmarks.init(random_seed, $Map, $Replicated, get_match_peer_ids())
 
 	var non_inverted_team = null
 	var inverted_team = null
@@ -126,13 +119,13 @@ func announce_play_game(seed: int) -> void:
 	$UI.init(non_inverted_team, inverted_team)
 
 @rpc("call_local", "reliable")
-func announce_game_over(winner_ids) -> void:
+func announce_game_over(winner_ids):
 	print("announce_game_over")
 	state = State.GAME_OVER
 	var won = winner_ids.has(multiplayer.get_unique_id())
 	$UI.show_game_over(won)
 
-func blow_everything_up() -> void:
+func blow_everything_up():
 	for unit in find_in_subtree("Unit"):
 		var explosion = load("res://scenes/explosion.tscn").instantiate()
 		explosion.init(get_match_peer_ids(), unit.global_position)
@@ -157,13 +150,13 @@ func blow_everything_up() -> void:
 		building.queue_free()
 
 @rpc("any_peer", "reliable")
-func request_construct_building() -> void:
+func request_construct_building():
 	if not multiplayer.is_server():
 		return
 
 	construct_building_for_peer(multiplayer.get_remote_sender_id())
 
-func construct_building_for_peer(peer_id: int) -> void:
+func construct_building_for_peer(peer_id):
 	var team = null
 	for candidate in find_in_subtree("Team"):
 		if candidate.id == peer_id:
@@ -182,13 +175,13 @@ func construct_building_for_peer(peer_id: int) -> void:
 		break
 
 @rpc("any_peer", "reliable")
-func request_produce_unit() -> void:
+func request_produce_unit():
 	if not multiplayer.is_server():
 		return
 
 	produce_unit_for_peer(multiplayer.get_remote_sender_id())
 
-func produce_unit_for_peer(peer_id: int) -> void:
+func produce_unit_for_peer(peer_id):
 	var team = null
 	for candidate in find_in_subtree("Team"):
 		if candidate.id == peer_id:
@@ -208,13 +201,13 @@ func produce_unit_for_peer(peer_id: int) -> void:
 		break
 
 @rpc("any_peer", "reliable")
-func request_target() -> void:
+func request_target():
 	if not multiplayer.is_server():
 		return
 
 	target_for_peer(multiplayer.get_remote_sender_id())
 
-func target_for_peer(peer_id: int) -> void:
+func target_for_peer(peer_id):
 	var team = null
 	for candidate in find_in_subtree("Team"):
 		if candidate.id == peer_id:

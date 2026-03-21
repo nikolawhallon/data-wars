@@ -21,7 +21,7 @@ func _ready():
 	$MultiplayerSynchronizer.add_visibility_filter(_is_visible_to_peer)
 	$MultiplayerSynchronizer.update_visibility()
 
-func decrement(amount: int) -> int:
+func decrement(amount):
 	var consumed = min(liters, amount)
 	liters -= consumed
 

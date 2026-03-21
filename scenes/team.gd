@@ -53,7 +53,7 @@ func _process(delta: float) -> void:
 		return
 
 	var speed = 1000.0
-	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var dir = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	$Camera2D.global_position += dir * speed * delta
 
 func is_local_human():

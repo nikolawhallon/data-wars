@@ -30,7 +30,7 @@ func _ready() -> void:
 	update_animation()
 	apply_team_palette()
 
-func apply_team_palette() -> void:
+func apply_team_palette():
 	if team_path.is_empty():
 		return
 

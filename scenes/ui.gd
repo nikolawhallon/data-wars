@@ -1,11 +1,11 @@
 extends CanvasLayer
 
 
-func init(non_inverted_team, inverted_team) -> void:
+func init(non_inverted_team, inverted_team):
 	print("Connecting team data/minerals/clicks update signals to the UI")
 	
 	var local_human_team = null
-	
+
 	if non_inverted_team.is_local_human():
 		local_human_team = non_inverted_team
 	elif inverted_team.is_local_human():

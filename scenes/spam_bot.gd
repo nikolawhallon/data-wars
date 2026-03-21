@@ -9,8 +9,8 @@ const SPEED = 100.0
 var target = null
 
 # TODO: extract this into some utils
-func get_arena() -> Node:
-	var candidate: Node = self
+func get_arena_for_node(node) -> Node:
+	var candidate: Node = node
 	while candidate != null:
 		if candidate.is_in_group("Arena"):
 			return candidate
@@ -33,7 +33,7 @@ func _ready():
 	$AnimatedSprite2D.play("default")
 	apply_team_palette()
 
-func apply_team_palette() -> void:
+func apply_team_palette():
 	if team_path.is_empty():
 		return
 
@@ -58,7 +58,7 @@ func _physics_process(_delta: float) -> void:
 	var target_position = null
 
 	if target == null:
-		for transmission_tower in get_arena().find_in_subtree("TransmissionTower"):
+		for transmission_tower in get_arena_for_node(self).find_in_subtree("TransmissionTower"):
 			var distance = global_position.distance_to(transmission_tower.global_position)
 			if distance < 256:
 				target = transmission_tower

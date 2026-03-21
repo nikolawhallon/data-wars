@@ -4,8 +4,8 @@ extends Node
 var rng = RandomNumberGenerator.new()
 
 @rpc("call_local")
-func init(seed, map, parent, match_peer_ids):
-	rng.seed = seed
+func init(random_seed, map, parent, match_peer_ids):
+	rng.seed = random_seed
 
 	var map_origin = map.get_map_origin()
 	var tile_size = map.get_tile_size()
