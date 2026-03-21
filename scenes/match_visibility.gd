@@ -1,14 +1,7 @@
 extends Node
 
 
-var match_peer_ids = []
-var test = []
-
-func init(initial_match_peer_ids):
-	match_peer_ids = initial_match_peer_ids
-
 func _ready():
-	test = match_peer_ids
 	if multiplayer.is_server():
 		# MatchVisibility assumed to always be sibling of MultiplayerSynchronizer
 		var sync = get_parent().get_node("MultiplayerSynchronizer")
@@ -16,4 +9,7 @@ func _ready():
 		sync.update_visibility()
 
 func _is_visible_to_peer(peer_id):
-	return test.has(peer_id)
+	var arena = NodeUtils.get_first_ancestor_in_group(self, "Arena")
+	var app = NodeUtils.get_first_ancestor_in_group(self, "App")
+	var match_peer_ids = app.get_peer_ids_for_match(arena.match_id)
+	return match_peer_ids.has(peer_id)

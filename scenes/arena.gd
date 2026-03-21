@@ -4,6 +4,8 @@ signal leave_requested
 
 var rng := RandomNumberGenerator.new()
 
+var match_id = null
+
 enum State {
 	PLAYING,
 	GAME_OVER
@@ -24,12 +26,6 @@ func find_in_subtree(group_name):
 			stack.append(child)
 
 	return out
-
-func get_match_peer_ids():
-	var match_peer_ids = []
-	for team in find_in_subtree("Team"):
-		match_peer_ids.append(team.peer_id)
-	return match_peer_ids
 
 func _ready() -> void:
 	rng.randomize()
@@ -81,7 +77,7 @@ func _process(_delta: float) -> void:
 		blow_everything_up()
 
 @rpc("call_local", "reliable")
-func announce_team(match_peer_ids, type, id):
+func announce_team(type, id):
 	for child in get_children():
 		if child.has_method("get") and child.get("id") == id:
 			return
@@ -92,7 +88,7 @@ func announce_team(match_peer_ids, type, id):
 	var inverted = false
 	if num_teams % 2 == 1:
 		inverted = true
-	team.init(match_peer_ids, type, id, inverted)
+	team.init(type, id, inverted)
 	print("Adding team")
 	add_child(team, true)
 
@@ -103,7 +99,7 @@ func announce_play_game(random_seed):
 	state = State.PLAYING
 
 	if multiplayer.is_server():
-		$Landmarks.init(random_seed, $Map, $Replicated, get_match_peer_ids())
+		$Landmarks.init(random_seed, $Map, $Replicated)
 
 	var non_inverted_team = null
 	var inverted_team = null
@@ -128,7 +124,7 @@ func announce_game_over(winner_ids):
 func blow_everything_up():
 	for unit in find_in_subtree("Unit"):
 		var explosion = load("res://scenes/explosion.tscn").instantiate()
-		explosion.init(get_match_peer_ids(), unit.global_position)
+		explosion.init(unit.global_position)
 		$Replicated.add_child(explosion, true)
 		unit.queue_free()
 
@@ -144,7 +140,7 @@ func blow_everything_up():
 				randf_range(-24.0, 24.0),
 				randf_range(-24.0, 24.0)
 			)
-			explosion.init(get_match_peer_ids(), pos)
+			explosion.init(pos)
 			$Replicated.add_child(explosion, true)
 
 		building.queue_free()
@@ -169,7 +165,7 @@ func construct_building_for_peer(peer_id):
 
 	for site in find_in_subtree("Site"):
 		var data_center = load("res://scenes/data_center.tscn").instantiate()
-		data_center.init(get_match_peer_ids(), team.get_path(), site.global_position, site.water_path)
+		data_center.init(team.get_path(), site.global_position, site.water_path)
 		$Replicated.add_child(data_center, true)
 		site.queue_free()
 		break

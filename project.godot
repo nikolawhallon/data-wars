@@ -19,6 +19,10 @@ config/icon="res://icon.svg"
 
 driver/enable_input=true
 
+[autoload]
+
+NodeUtils="*uid://sr66tdhkkaqg"
+
 [display]
 
 window/size/viewport_width=640

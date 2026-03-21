@@ -30,8 +30,7 @@ var inverted = false
 		clicks = value
 		clicks_updated.emit(clicks)
 
-func init(match_peer_ids, initial_type, initial_peer_id, initial_inverted):
-	$MatchVisibility.init(match_peer_ids)
+func init(initial_type, initial_peer_id, initial_inverted):
 	type = initial_type
 	peer_id = initial_peer_id
 	inverted = initial_inverted

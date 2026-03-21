@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://dt4duwbafrdqw" path="res://assets/spam_bot/spam_bot_2.png" id="4_hwjvk"]
 [ext_resource type="Texture2D" uid="uid://wy063i0su6kl" path="res://assets/spam_bot/spam_bot_3.png" id="5_ffl8a"]
 [ext_resource type="Texture2D" uid="uid://crm7rdab02hec" path="res://assets/spam_bot/spam_bot_4.png" id="6_mrc8k"]
+[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/match_visibility.tscn" id="7_hwjvk"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_7n53c"]
 animations = [{
@@ -62,3 +63,5 @@ shape = SubResource("CircleShape2D_r6ej7")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=710060560]
 replication_config = SubResource("SceneReplicationConfig_jgfsr")
+
+[node name="MatchVisibility" parent="." unique_id=1055588141 instance=ExtResource("7_hwjvk")]

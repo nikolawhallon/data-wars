@@ -1,10 +1,7 @@
 extends Area2D
 
 
-var match_peer_ids = []
-
-func init(match_peer_ids, initial_global_position):
-	$MatchVisibility.init(match_peer_ids)
+func init(initial_global_position):
 	global_position = initial_global_position
 
 func _ready():

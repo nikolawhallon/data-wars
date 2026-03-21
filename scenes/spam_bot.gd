@@ -4,33 +4,13 @@ extends CharacterBody2D
 const SPEED = 100.0
 
 @export var team_path: NodePath
-# only the server will have this set correctly
-# as only the server needs to move units
 var target = null
-
-# TODO: extract this into some utils
-func get_arena_for_node(node) -> Node:
-	var candidate: Node = node
-	while candidate != null:
-		if candidate.is_in_group("Arena"):
-			return candidate
-		candidate = candidate.get_parent()
-	return null
-
-func _is_visible_to_peer(peer_id: int) -> bool:
-	# better even would be to get the match_id from the arena
-	# and then get the match_peer_ids from the app
-	var arena = get_arena_for_node(self)
-	var match_peer_ids = arena.get_match_peer_ids()
-	return match_peer_ids.has(peer_id)
 
 func init(initial_team_path, initial_position):
 	team_path = initial_team_path
 	global_position = initial_position
 
 func _ready():
-	$MultiplayerSynchronizer.add_visibility_filter(_is_visible_to_peer)
-	$MultiplayerSynchronizer.update_visibility()
 	$AnimatedSprite2D.play("default")
 	apply_team_palette()
 
@@ -59,7 +39,7 @@ func _physics_process(_delta: float) -> void:
 	var target_position = null
 
 	if target == null:
-		for transmission_tower in get_arena_for_node(self).find_in_subtree("TransmissionTower"):
+		for transmission_tower in NodeUtils.get_first_ancestor_in_group(self, "Arena").find_in_subtree("TransmissionTower"):
 			var distance = global_position.distance_to(transmission_tower.global_position)
 			if distance < 256:
 				target = transmission_tower

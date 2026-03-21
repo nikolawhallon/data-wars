@@ -7,16 +7,21 @@ var rng = RandomNumberGenerator.new()
 
 var waiting_peer_ids = []
 
-# TODO: change this to just "matches" with a "state" which is either "pending" or "playing"
-# then erase when the match actually formally "ends"
-var pending_matches = {}
+var matches = {}
 
-func find_arena_for_peer(peer_id):
+func get_arena_for_peer(peer_id):
 	for arena in $Matches.get_children():
 		for team in arena.find_in_subtree("Team"):
 			if team.peer_id == peer_id:
 				return arena
 	return null
+
+func get_peer_ids_for_match(match_id):
+	var peer_ids = []
+	for proto_team in matches[match_id]["proto_teams"]:
+		peer_ids.append(proto_team["peer_id"])
+
+	return peer_ids
 
 func _ready():
 	rng.randomize()
@@ -50,7 +55,8 @@ func _process(_delta: float) -> void:
 		var match_id = rng.randi()
 		var seed = rng.randi()
 
-		pending_matches[match_id] = {
+		matches[match_id] = {
+			"state": "pending",
 			"proto_teams": proto_teams,
 			"seed": seed,
 		}
@@ -129,11 +135,12 @@ func try_match_making():
 
 		var match_id = rng.randi()
 		# ensure no match_id collisions
-		while pending_matches.has(match_id):
+		while matches.has(match_id):
 			match_id = rng.randi()
 		var random_seed = rng.randi()
 
-		pending_matches[match_id] = {
+		matches[match_id] = {
+			"state": "pending",
 			"proto_teams": proto_teams,
 			"seed": random_seed,
 		}
@@ -148,15 +155,12 @@ func try_match_making():
 func announce_boot_arena(match_id, proto_teams):
 	var arena = load("res://scenes/arena.tscn").instantiate()
 	arena.name = "Arena_%d" % match_id
+	arena.match_id = match_id
 	$Matches.add_child(arena, true)
 	arena.leave_requested.connect(_on_arena_leave_requested.bind(arena))
 
-	var match_peer_ids = []
 	for proto_team in proto_teams:
-		match_peer_ids.append(proto_team["peer_id"])
-
-	for proto_team in proto_teams:
-		arena.announce_team(match_peer_ids, proto_team["type"], proto_team["peer_id"])
+		arena.announce_team(proto_team["type"], proto_team["peer_id"])
 
 	if multiplayer.is_server():
 		mark_match_ready_for_peer(multiplayer.get_unique_id(), match_id)
@@ -171,11 +175,11 @@ func request_mark_match_ready(match_id):
 	mark_match_ready_for_peer(multiplayer.get_remote_sender_id(), match_id)
 
 func mark_match_ready_for_peer(peer_id, match_id):
-	if not pending_matches.has(match_id):
-		print("WARN - pending_matches does not have this match_id: ", match_id)
+	if not matches.has(match_id):
+		print("WARN - matches does not have this match_id: ", match_id)
 		return
 
-	var proto_teams = pending_matches[match_id]["proto_teams"]
+	var proto_teams = matches[match_id]["proto_teams"]
 
 	for proto_team in proto_teams:
 		if proto_team["peer_id"] == peer_id:
@@ -186,15 +190,14 @@ func mark_match_ready_for_peer(peer_id, match_id):
 		if not proto_team["ready"]:
 			return
 
-	var random_seed = pending_matches[match_id]["seed"]
+	var random_seed = matches[match_id]["seed"]
+	matches[match_id]["state"] = "playing"
 
 	if DisplayServer.get_name() == "headless":
 		announce_start_match.rpc_id(1, match_id, random_seed)
 
 	for proto_team in proto_teams:
 		announce_start_match.rpc_id(proto_team["peer_id"], match_id, random_seed)
-
-	pending_matches.erase(match_id)
 
 @rpc("call_local", "reliable")
 func announce_start_match(match_id, random_seed):
@@ -215,7 +218,7 @@ func request_leave_match():
 	leave_match_for_peer(multiplayer.get_remote_sender_id())
 
 func leave_match_for_peer(peer_id):
-	var arena = find_arena_for_peer(peer_id)
+	var arena = get_arena_for_peer(peer_id)
 	if arena == null:
 		print("WARN - no arena for peer id: ", peer_id)
 		return
@@ -232,13 +235,18 @@ func leave_match_for_peer(peer_id):
 
 	# TODO: this might be redundant
 	print("Freeing arena for peer id: ", peer_id)
+	var match_id = arena.match_id
+	matches.erase(match_id)
 	arena.queue_free()
 
 @rpc("call_local", "reliable")
 func announce_leave_match(arena_name):
 	print("Freeing arena for peer id: ", multiplayer.get_unique_id())
 	if $Matches.has_node(arena_name):
-		$Matches.get_node(arena_name).queue_free()
+		var arena = $Matches.get_node(arena_name)
+		var match_id = arena.match_id
+		matches.erase(match_id)
+		arena.queue_free()
 
 	if DisplayServer.get_name() != "headless":
 		multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()

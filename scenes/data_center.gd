@@ -12,8 +12,7 @@ var rng = RandomNumberGenerator.new()
 		update_animation()
 @export var water_path: NodePath
 
-func init(match_peer_ids, initial_team_path, initial_position, initial_water_path):
-	$MatchVisibility.init(match_peer_ids)
+func init(initial_team_path, initial_position, initial_water_path):
 	team_path = initial_team_path
 	global_position = initial_position
 	water_path = initial_water_path
