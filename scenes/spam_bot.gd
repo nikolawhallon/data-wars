@@ -17,13 +17,14 @@ func get_arena_for_node(node) -> Node:
 		candidate = candidate.get_parent()
 	return null
 
-var match_peer_ids = []
-
 func _is_visible_to_peer(peer_id: int) -> bool:
+	# better even would be to get the match_id from the arena
+	# and then get the match_peer_ids from the app
+	var arena = get_arena_for_node(self)
+	var match_peer_ids = arena.get_match_peer_ids()
 	return match_peer_ids.has(peer_id)
 
-func init(initial_match_peer_ids, initial_team_path, initial_position):
-	match_peer_ids = initial_match_peer_ids
+func init(initial_team_path, initial_position):
 	team_path = initial_team_path
 	global_position = initial_position
 

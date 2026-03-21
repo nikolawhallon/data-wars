@@ -2,6 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://ck6legrrr4md1" path="res://assets/mine.png" id="1_kqr42"]
 [ext_resource type="Script" uid="uid://kwquxmtmypy3" path="res://scenes/mine.gd" id="2_m55k0"]
+[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/match_visibility.tscn" id="3_m55k0"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_m55k0"]
 size = Vector2(48, 48)
@@ -22,3 +23,5 @@ shape = SubResource("RectangleShape2D_m55k0")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1197378512]
 replication_config = SubResource("SceneReplicationConfig_m55k0")
+
+[node name="MatchVisibility" parent="." unique_id=1055588141 instance=ExtResource("3_m55k0")]

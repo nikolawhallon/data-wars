@@ -2,6 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://brjpokv68o0rx" path="res://assets/site.png" id="1_t7a5y"]
 [ext_resource type="Script" uid="uid://5jlnhegkr3bb" path="res://scenes/site.gd" id="2_khdqb"]
+[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/match_visibility.tscn" id="3_mcs7x"]
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_khdqb"]
 properties/0/path = NodePath(".:position")
@@ -17,3 +18,5 @@ script = ExtResource("2_khdqb")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1268254569]
 replication_config = SubResource("SceneReplicationConfig_khdqb")
+
+[node name="MatchVisibility" parent="." unique_id=1055588141 instance=ExtResource("3_mcs7x")]

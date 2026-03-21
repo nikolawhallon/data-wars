@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://dsikft8sgunqv" path="res://assets/data_center/data_center_producing_2.png" id="5_ha7m5"]
 [ext_resource type="Texture2D" uid="uid://my8r3cmagknf" path="res://assets/data_center/data_center_producing_3.png" id="6_ryyxn"]
 [ext_resource type="Texture2D" uid="uid://bt0ymt5vysj7y" path="res://assets/data_center/data_center_producing_4.png" id="7_gh7pg"]
+[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/match_visibility.tscn" id="8_3elua"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_57g4l"]
 animations = [{
@@ -72,6 +73,8 @@ shape = SubResource("RectangleShape2D_0o2gg")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1816174325]
 replication_config = SubResource("SceneReplicationConfig_jl5ch")
+
+[node name="MatchVisibility" parent="." unique_id=1055588141 instance=ExtResource("8_3elua")]
 
 [connection signal="timeout" from="WaterTimer" to="." method="_on_water_timer_timeout"]
 [connection signal="timeout" from="UnitTimer" to="." method="_on_unit_timer_timeout"]

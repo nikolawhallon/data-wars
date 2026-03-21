@@ -28,7 +28,7 @@ func find_in_subtree(group_name):
 func get_match_peer_ids():
 	var match_peer_ids = []
 	for team in find_in_subtree("Team"):
-		match_peer_ids.append(team.id)
+		match_peer_ids.append(team.peer_id)
 	return match_peer_ids
 
 func _ready() -> void:
@@ -67,14 +67,14 @@ func _process(_delta: float) -> void:
 		for team in find_in_subtree("Team"):
 			if team.clicks > most_clicks:
 				most_clicks = team.clicks
-				winner_ids = [team.id]
+				winner_ids = [team.peer_id]
 			elif team.clicks == most_clicks:
-				winner_ids.append(team.id)
+				winner_ids.append(team.peer_id)
 
 		if DisplayServer.get_name() == "headless":
 			announce_game_over.rpc_id(1, winner_ids)
 		for team in find_in_subtree("Team"):
-			announce_game_over.rpc_id(team.id, winner_ids)
+			announce_game_over.rpc_id(team.peer_id, winner_ids)
  
 	if state == State.GAME_OVER and multiplayer.is_server():
 		# yes, this blows everything up all the time, if state is GAME_OVER, this is on purpose
@@ -159,7 +159,7 @@ func request_construct_building():
 func construct_building_for_peer(peer_id):
 	var team = null
 	for candidate in find_in_subtree("Team"):
-		if candidate.id == peer_id:
+		if candidate.peer_id == peer_id:
 			team = candidate
 			break
 
@@ -184,7 +184,7 @@ func request_produce_unit():
 func produce_unit_for_peer(peer_id):
 	var team = null
 	for candidate in find_in_subtree("Team"):
-		if candidate.id == peer_id:
+		if candidate.peer_id == peer_id:
 			team = candidate
 			break
 
@@ -210,7 +210,7 @@ func request_target():
 func target_for_peer(peer_id):
 	var team = null
 	for candidate in find_in_subtree("Team"):
-		if candidate.id == peer_id:
+		if candidate.peer_id == peer_id:
 			team = candidate
 			break
 

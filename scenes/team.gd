@@ -6,7 +6,7 @@ signal data_updated
 signal clicks_updated
 
 var type = ""
-var id = -1
+var peer_id = -1
 var inverted = false
 
 @export var minerals := 0:
@@ -30,21 +30,13 @@ var inverted = false
 		clicks = value
 		clicks_updated.emit(clicks)
 
-var match_peer_ids = []
-
-func init(initial_match_peer_ids, initial_type, initial_id, initial_inverted):
-	match_peer_ids = initial_match_peer_ids
+func init(match_peer_ids, initial_type, initial_peer_id, initial_inverted):
+	$MatchVisibility.init(match_peer_ids)
 	type = initial_type
-	id = initial_id
+	peer_id = initial_peer_id
 	inverted = initial_inverted
 
-func _is_visible_to_peer(peer_id: int) -> bool:
-	return match_peer_ids.has(peer_id)
-
 func _ready():
-	$MultiplayerSynchronizer.add_visibility_filter(_is_visible_to_peer)
-	$MultiplayerSynchronizer.update_visibility()
-
 	if is_local_human():
 		$Camera2D.make_current()
 
@@ -57,4 +49,4 @@ func _process(delta: float) -> void:
 	$Camera2D.global_position += dir * speed * delta
 
 func is_local_human():
-	return type == "human" and id == multiplayer.get_unique_id()
+	return type == "human" and peer_id == multiplayer.get_unique_id()

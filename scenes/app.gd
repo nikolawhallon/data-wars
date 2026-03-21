@@ -7,12 +7,14 @@ var rng = RandomNumberGenerator.new()
 
 var waiting_peer_ids = []
 
+# TODO: change this to just "matches" with a "state" which is either "pending" or "playing"
+# then erase when the match actually formally "ends"
 var pending_matches = {}
 
 func find_arena_for_peer(peer_id):
 	for arena in $Matches.get_children():
 		for team in arena.find_in_subtree("Team"):
-			if team.id == peer_id:
+			if team.peer_id == peer_id:
 				return arena
 	return null
 
@@ -41,8 +43,8 @@ func _process(_delta: float) -> void:
 
 	if Input.is_action_just_pressed("single_player"):
 		var proto_teams = [
-			{"type": "human", "id": 1, "ready": false},
-			{"type": "computer", "id": 2, "ready": true}, # this feels hacky
+			{"type": "human", "peer_id": 1, "ready": false},
+			{"type": "computer", "peer_id": 2, "ready": true}, # this feels hacky
 		]
 
 		var match_id = rng.randi()
@@ -121,7 +123,7 @@ func try_match_making():
 		for i in MAX_TEAMS:
 			proto_teams.append({
 				"type": "human",
-				"id": waiting_peer_ids.pop_front(),
+				"peer_id": waiting_peer_ids.pop_front(),
 				"ready": false,
 			})
 
@@ -140,7 +142,7 @@ func try_match_making():
 			announce_boot_arena.rpc_id(1, match_id, proto_teams)
 
 		for proto_team in proto_teams:
-			announce_boot_arena.rpc_id(proto_team["id"], match_id, proto_teams)
+			announce_boot_arena.rpc_id(proto_team["peer_id"], match_id, proto_teams)
 
 @rpc("call_local", "reliable")
 func announce_boot_arena(match_id, proto_teams):
@@ -151,10 +153,10 @@ func announce_boot_arena(match_id, proto_teams):
 
 	var match_peer_ids = []
 	for proto_team in proto_teams:
-		match_peer_ids.append(proto_team["id"])
+		match_peer_ids.append(proto_team["peer_id"])
 
 	for proto_team in proto_teams:
-		arena.announce_team(match_peer_ids, proto_team["type"], proto_team["id"])
+		arena.announce_team(match_peer_ids, proto_team["type"], proto_team["peer_id"])
 
 	if multiplayer.is_server():
 		mark_match_ready_for_peer(multiplayer.get_unique_id(), match_id)
@@ -176,7 +178,7 @@ func mark_match_ready_for_peer(peer_id, match_id):
 	var proto_teams = pending_matches[match_id]["proto_teams"]
 
 	for proto_team in proto_teams:
-		if proto_team["id"] == peer_id:
+		if proto_team["peer_id"] == peer_id:
 			proto_team["ready"] = true
 			break
 
@@ -190,7 +192,7 @@ func mark_match_ready_for_peer(peer_id, match_id):
 		announce_start_match.rpc_id(1, match_id, random_seed)
 
 	for proto_team in proto_teams:
-		announce_start_match.rpc_id(proto_team["id"], match_id, random_seed)
+		announce_start_match.rpc_id(proto_team["peer_id"], match_id, random_seed)
 
 	pending_matches.erase(match_id)
 
@@ -220,7 +222,7 @@ func leave_match_for_peer(peer_id):
 
 	var peer_ids = []
 	for team in arena.find_in_subtree("Team"):
-		peer_ids.append(team.id)
+		peer_ids.append(team.peer_id)
 
 	if DisplayServer.get_name() == "headless":
 		announce_leave_match.rpc_id(1, arena.name)

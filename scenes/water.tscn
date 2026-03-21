@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://r8dfiebwt1x8" path="res://scenes/water.gd" id="2_p1n2c"]
 [ext_resource type="Texture2D" uid="uid://k28h030e0pph" path="res://assets/water/water_3.png" id="3_4pb3l"]
 [ext_resource type="Texture2D" uid="uid://dyobib556uqjn" path="res://assets/water/water_4.png" id="4_htah3"]
+[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/match_visibility.tscn" id="6_xgdjl"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_a35vf"]
 animations = [{
@@ -43,3 +44,5 @@ script = ExtResource("2_p1n2c")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=14629320]
 replication_config = SubResource("SceneReplicationConfig_xgdjl")
+
+[node name="MatchVisibility" parent="." unique_id=1055588141 instance=ExtResource("6_xgdjl")]
