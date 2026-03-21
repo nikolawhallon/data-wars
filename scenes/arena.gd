@@ -25,6 +25,19 @@ func find_in_subtree(group_name: String) -> Array:
 
 	return out
 
+# TODO: extract this into some utils
+func get_peer_ids():
+	var peer_ids := []
+	for team in find_in_subtree("Team"):
+		peer_ids.append(team.id)
+	return peer_ids
+
+func get_match_peer_ids():
+	var match_peer_ids := []
+	for team in find_in_subtree("Team"):
+		match_peer_ids.append(team.id)
+	return match_peer_ids
+
 func _ready() -> void:
 	rng.randomize()
 
@@ -75,7 +88,7 @@ func _process(_delta: float) -> void:
 		blow_everything_up()
 
 @rpc("call_local", "reliable")
-func announce_team(type: String, id: int) -> void:
+func announce_team(match_peer_ids, type: String, id: int) -> void:
 	for child in get_children():
 		if child.has_method("get") and child.get("id") == id:
 			return
@@ -83,11 +96,12 @@ func announce_team(type: String, id: int) -> void:
 	var num_teams = len(find_in_subtree("Team"))
 
 	var team = load("res://scenes/team.tscn").instantiate()
-	team.type = type
-	team.id = id
+	var inverted = false
 	if num_teams % 2 == 1:
-		team.inverted = true
-	add_child(team)
+		inverted = true
+	team.init(match_peer_ids, type, id, inverted)
+	print("Adding team")
+	add_child(team, true)
 
 @rpc("call_local", "reliable")
 func announce_play_game(seed: int) -> void:
@@ -96,7 +110,7 @@ func announce_play_game(seed: int) -> void:
 	state = State.PLAYING
 
 	if multiplayer.is_server():
-		$Landmarks.init(seed, $Map, $Replicated)
+		$Landmarks.init(seed, $Map, $Replicated, get_match_peer_ids())
 
 	var non_inverted_team = null
 	var inverted_team = null
@@ -121,7 +135,7 @@ func announce_game_over(winner_ids) -> void:
 func blow_everything_up() -> void:
 	for unit in find_in_subtree("Unit"):
 		var explosion = load("res://scenes/explosion.tscn").instantiate()
-		explosion.global_position = unit.global_position
+		explosion.init(get_match_peer_ids(), unit.global_position)
 		$Replicated.add_child(explosion, true)
 		unit.queue_free()
 
@@ -133,10 +147,11 @@ func blow_everything_up() -> void:
 
 		for i in 10:
 			var explosion = load("res://scenes/explosion.tscn").instantiate()
-			explosion.global_position = building.global_position + Vector2(
+			var pos = building.global_position + Vector2(
 				randf_range(-24.0, 24.0),
 				randf_range(-24.0, 24.0)
 			)
+			explosion.init(get_match_peer_ids(), pos)
 			$Replicated.add_child(explosion, true)
 
 		building.queue_free()
@@ -161,7 +176,7 @@ func construct_building_for_peer(peer_id: int) -> void:
 
 	for site in find_in_subtree("Site"):
 		var data_center = load("res://scenes/data_center.tscn").instantiate()
-		data_center.init(team.get_path(), site.global_position, site.water_path)
+		data_center.init(get_match_peer_ids(), team.get_path(), site.global_position, site.water_path)
 		$Replicated.add_child(data_center, true)
 		site.queue_free()
 		break

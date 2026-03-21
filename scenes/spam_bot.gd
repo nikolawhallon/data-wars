@@ -17,9 +17,19 @@ func get_arena() -> Node:
 		candidate = candidate.get_parent()
 	return null
 
-# remember to call "init" before "add_child" so that team_path
-# is populated by the time "_ready" executes
+var match_peer_ids = []
+
+func _is_visible_to_peer(peer_id: int) -> bool:
+	return match_peer_ids.has(peer_id)
+
+func init(initial_match_peer_ids, initial_team_path, initial_position):
+	match_peer_ids = initial_match_peer_ids
+	team_path = initial_team_path
+	global_position = initial_position
+
 func _ready():
+	$MultiplayerSynchronizer.add_visibility_filter(_is_visible_to_peer)
+	$MultiplayerSynchronizer.update_visibility()
 	$AnimatedSprite2D.play("default")
 	apply_team_palette()
 
@@ -40,10 +50,6 @@ func apply_team_palette() -> void:
 	mat.set_shader_parameter("pal1", Color("#a96868"))
 	mat.set_shader_parameter("pal2", Color("#764462"))
 	mat.set_shader_parameter("pal3", Color("#2c2137"))
-
-func init(initial_team_path, initial_position):
-	global_position = initial_position
-	team_path = initial_team_path
 
 func _physics_process(_delta: float) -> void:
 	if not multiplayer.is_server():

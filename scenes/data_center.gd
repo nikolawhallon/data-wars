@@ -12,10 +12,21 @@ var rng = RandomNumberGenerator.new()
 		update_animation()
 @export var water_path: NodePath
 
-# remember to call "init" before "add_child" so that team_path
-# is populated by the time "_ready" executes
+var match_peer_ids = []
+
+func init(initial_match_peer_ids, initial_team_path, initial_position, initial_water_path):
+	match_peer_ids = initial_match_peer_ids
+	team_path = initial_team_path
+	global_position = initial_position
+	water_path = initial_water_path
+
+func _is_visible_to_peer(peer_id: int) -> bool:
+	return match_peer_ids.has(peer_id)
+
 func _ready() -> void:
 	rng.randomize()
+	$MultiplayerSynchronizer.add_visibility_filter(_is_visible_to_peer)
+	$MultiplayerSynchronizer.update_visibility()
 	update_animation()
 	apply_team_palette()
 
@@ -43,11 +54,6 @@ func update_animation() -> void:
 	else:
 		$AnimatedSprite2D.play("producing")
 
-func init(initial_team_path, initial_position, initial_water_path):
-	team_path = initial_team_path
-	global_position = initial_position
-	water_path = initial_water_path
-
 func _on_water_timer_timeout() -> void:
 	if not multiplayer.is_server():
 		return
@@ -67,7 +73,7 @@ func _on_unit_timer_timeout() -> void:
 
 	if producing == "spam_bot":
 		var spam_bot = load("res://scenes/spam_bot.tscn").instantiate()
-		spam_bot.init(team_path, global_position + Vector2(
+		spam_bot.init(match_peer_ids, team_path, global_position + Vector2(
 			rng.randf_range(-64.0, 64.0),
 			rng.randf_range(-64.0, 64.0)
 		))

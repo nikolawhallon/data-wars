@@ -30,7 +30,21 @@ var inverted = false
 		clicks = value
 		clicks_updated.emit(clicks)
 
-func _ready() -> void:
+var match_peer_ids = []
+
+func init(initial_match_peer_ids, initial_type, initial_id, initial_inverted):
+	match_peer_ids = initial_match_peer_ids
+	type = initial_type
+	id = initial_id
+	inverted = initial_inverted
+
+func _is_visible_to_peer(peer_id: int) -> bool:
+	return match_peer_ids.has(peer_id)
+
+func _ready():
+	$MultiplayerSynchronizer.add_visibility_filter(_is_visible_to_peer)
+	$MultiplayerSynchronizer.update_visibility()
+
 	if is_local_human():
 		$Camera2D.make_current()
 

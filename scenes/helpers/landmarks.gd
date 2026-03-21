@@ -4,7 +4,7 @@ extends Node
 var rng = RandomNumberGenerator.new()
 
 @rpc("call_local")
-func init(seed, map, parent):
+func init(seed, map, parent, match_peer_ids):
 	rng.seed = seed
 
 	var map_origin = map.get_map_origin()
@@ -31,7 +31,7 @@ func init(seed, map, parent):
 			if collision:
 				continue
 				
-			mine.global_position = pos
+			mine.init(match_peer_ids, pos)
 			parent.add_child(mine, true)
 			break
 			
@@ -63,33 +63,29 @@ func init(seed, map, parent):
 			if collision:
 				continue
 
-			water.global_position = pos
+			water.init(match_peer_ids, pos)
 			# TODO: it's possible this could get called more than once
 			parent.add_child(water, true)
 
 			var site_number = 0
 			if map.is_ground_block(x - 3, y, 1):
 				var site = load("res://scenes/site.tscn").instantiate()
-				site.water_path = water.get_path()
-				site.global_position = map_origin + tile_size / 2 + Vector2(x - 3, y) * tile_size
+				site.init(match_peer_ids, water.get_path(), map_origin + tile_size / 2 + Vector2(x - 3, y) * tile_size)
 				parent.add_child(site, true)
 				site_number += 1
 			if map.is_ground_block(x + 3, y, 1):
 				var site = load("res://scenes/site.tscn").instantiate()
-				site.water_path = water.get_path()
-				site.global_position = map_origin + tile_size / 2 + Vector2(x + 3, y) * tile_size
+				site.init(match_peer_ids, water.get_path(), map_origin + tile_size / 2 + Vector2(x + 3, y) * tile_size)
 				parent.add_child(site, true)
 				site_number += 1
 			if map.is_ground_block(x, y - 3, 1):
 				var site = load("res://scenes/site.tscn").instantiate()
-				site.water_path = water.get_path()
-				site.global_position = map_origin + tile_size / 2 + Vector2(x, y - 3) * tile_size
+				site.init(match_peer_ids, water.get_path(), map_origin + tile_size / 2 + Vector2(x, y - 3) * tile_size)
 				parent.add_child(site, true)
 				site_number += 1
 			if map.is_ground_block(x, y + 3, 1):
 				var site = load("res://scenes/site.tscn").instantiate()
-				site.water_path = water.get_path()
-				site.global_position = map_origin + tile_size / 2 + Vector2(x, y + 3) * tile_size
+				site.init(match_peer_ids, water.get_path(), map_origin + tile_size / 2 + Vector2(x, y + 3) * tile_size)
 				parent.add_child(site, true)
 				site_number += 1
 
@@ -121,8 +117,8 @@ func init(seed, map, parent):
 							collision = true
 			if collision:
 				continue
-				
-			transmission_tower.global_position = pos
+
+			transmission_tower.init(match_peer_ids, pos)
 			parent.add_child(transmission_tower, true)
 			break
 			

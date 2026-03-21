@@ -8,6 +8,19 @@ signal liters_updated
 		liters = max(value, 0)
 		liters_updated.emit(liters)
 
+var match_peer_ids = []
+
+func init(initial_match_peer_ids, initial_global_position):
+	match_peer_ids = initial_match_peer_ids
+	global_position = initial_global_position
+
+func _is_visible_to_peer(peer_id: int) -> bool:
+	return match_peer_ids.has(peer_id)
+
+func _ready():
+	$MultiplayerSynchronizer.add_visibility_filter(_is_visible_to_peer)
+	$MultiplayerSynchronizer.update_visibility()
+
 func decrement(amount: int) -> int:
 	var consumed = min(liters, amount)
 	liters -= consumed

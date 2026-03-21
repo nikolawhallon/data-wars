@@ -7,10 +7,6 @@ var rng := RandomNumberGenerator.new()
 
 var waiting_peer_ids: Array[int] = []
 
-# match_id -> {
-#   "proto_teams": Array[Dictionary], # {"type": String, "id": int, "ready": bool}
-#   "seed": int
-# }
 var pending_matches := {}
 
 func find_arena_for_peer(peer_id: int) -> Node:
@@ -153,8 +149,12 @@ func announce_boot_arena(match_id: int, proto_teams: Array) -> void:
 	$Matches.add_child(arena, true)
 	arena.leave_requested.connect(_on_arena_leave_requested.bind(arena))
 
+	var match_peer_ids = []
 	for proto_team in proto_teams:
-		arena.announce_team(proto_team["type"], proto_team["id"])
+		match_peer_ids.append(proto_team["id"])
+
+	for proto_team in proto_teams:
+		arena.announce_team(match_peer_ids, proto_team["type"], proto_team["id"])
 
 	if multiplayer.is_server():
 		mark_match_ready_for_peer(multiplayer.get_unique_id(), match_id)
