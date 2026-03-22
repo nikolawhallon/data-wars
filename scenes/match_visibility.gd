@@ -9,7 +9,7 @@ func _ready():
 		sync.update_visibility()
 
 func _is_visible_to_peer(peer_id):
-	var arena = NodeUtils.get_first_ancestor_in_group(self, "Arena")
-	var app = NodeUtils.get_first_ancestor_in_group(self, "App")
+	var arena = NodeUtils.get_first_ancestor_in_group_for_node(self, "Arena")
+	var app = NodeUtils.get_first_ancestor_in_group_for_node(self, "App")
 	var match_peer_ids = app.get_peer_ids_for_match(arena.match_id)
 	return match_peer_ids.has(peer_id)

@@ -11,7 +11,7 @@ var matches = {}
 
 func get_arena_for_peer(peer_id):
 	for arena in $Matches.get_children():
-		for team in arena.find_in_subtree("Team"):
+		for team in NodeUtils.get_nodes_in_group_for_node(arena, "Team"):
 			if team.peer_id == peer_id:
 				return arena
 	return null
@@ -53,12 +53,12 @@ func _process(_delta: float) -> void:
 		]
 
 		var match_id = rng.randi()
-		var seed = rng.randi()
+		var random_seed = rng.randi()
 
 		matches[match_id] = {
 			"state": "pending",
 			"proto_teams": proto_teams,
-			"seed": seed,
+			"seed": random_seed,
 		}
 
 		announce_boot_arena.rpc_id(1, match_id, proto_teams)
@@ -204,7 +204,7 @@ func announce_start_match(match_id, random_seed):
 	var arena = $Matches.get_node("Arena_%d" % match_id)
 	arena.announce_play_game(random_seed)
 
-func _on_arena_leave_requested(arena):
+func _on_arena_leave_requested():
 	if multiplayer.is_server():
 		leave_match_for_peer(multiplayer.get_unique_id())
 	else:
@@ -224,7 +224,7 @@ func leave_match_for_peer(peer_id):
 		return
 
 	var peer_ids = []
-	for team in arena.find_in_subtree("Team"):
+	for team in NodeUtils.get_nodes_in_group_for_node(arena, "Team"):
 		peer_ids.append(team.peer_id)
 
 	if DisplayServer.get_name() == "headless":

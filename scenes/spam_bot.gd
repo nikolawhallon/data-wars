@@ -39,7 +39,9 @@ func _physics_process(_delta: float) -> void:
 	var target_position = null
 
 	if target == null:
-		for transmission_tower in NodeUtils.get_first_ancestor_in_group(self, "Arena").find_in_subtree("TransmissionTower"):
+		var arena = NodeUtils.get_first_ancestor_in_group_for_node(self, "Arena")
+		var transmission_towers = NodeUtils.get_nodes_in_group_for_node(arena, "TransmissionTower")
+		for transmission_tower in transmission_towers:
 			var distance = global_position.distance_to(transmission_tower.global_position)
 			if distance < 256:
 				target = transmission_tower

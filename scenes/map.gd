@@ -1,7 +1,7 @@
 extends Node2D
 
-@export var map_w            = 2 * 200 / 4
-@export var map_h            = 2 * 120 / 4
+@export var map_w            = int(2.0 * 200.0 / 4.0)
+@export var map_h            = int(2.0 * 120.0 / 4.0)
 @export var ground_seed      = 0.7
 @export var wall_condition   = 4
 @export var ground_condition = 4
@@ -74,8 +74,8 @@ func _ready():
 	pass
 
 @rpc("call_local")
-func init(seed):
-	rng.seed = seed
+func init(random_seed):
+	rng.seed = random_seed
 	
 	for _x in range(0, map_w):
 		var column = []
