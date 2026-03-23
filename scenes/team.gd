@@ -7,6 +7,7 @@ signal clicks_updated
 
 var type = ""
 var peer_id = -1
+@export var net_id = -1
 var inverted = false
 
 @export var minerals := 0:
@@ -30,12 +31,16 @@ var inverted = false
 		clicks = value
 		clicks_updated.emit(clicks)
 
-func init(initial_type, initial_peer_id, initial_inverted):
-	type = initial_type
+func init(initial_net_id, initial_peer_id, initial_type, initial_inverted):
+	net_id = initial_net_id
 	peer_id = initial_peer_id
+	type = initial_type
 	inverted = initial_inverted
 
 func _ready():
+	var app = get_node("/root/App")
+	app.register_net_node(net_id, self)
+
 	if is_local_human():
 		$Camera2D.make_current()
 

@@ -9,6 +9,40 @@ var waiting_peer_ids = []
 
 var matches = {}
 
+# I use net ids because eventually I need clients to be able to say:
+# "I want THIS Spam Bot to target THAT Transmission Tower"
+# and I need the server, and all clients, to understand this
+var net_nodes = {}
+
+# server-only
+func get_new_net_id():
+	var net_id = rng.randi()
+	# ensure no net_id collisions
+	while net_nodes.has(net_id):
+		net_id = rng.randi()
+
+	return net_id
+
+func register_net_node(net_id, node):
+	var arena = NodeUtils.get_first_ancestor_in_group_for_node(node, "Arena")
+	net_nodes[net_id] = {
+		"match_id": arena.match_id,
+		"node": node
+	}
+
+func get_node_for_net_id(net_id):
+	return net_nodes[net_id]["node"]
+
+func erase_net_nodes_in_match(match_id):
+	var net_nodes_to_remove = []
+
+	for net_id in net_nodes:
+		if net_nodes[net_id]["match_id"] == match_id:
+			net_nodes_to_remove.append(net_id)
+
+	for net_id in net_nodes_to_remove:
+		net_nodes.erase(net_id)
+
 func get_arena_for_peer(peer_id):
 	for arena in $Matches.get_children():
 		for team in NodeUtils.get_nodes_in_group_for_node(arena, "Team"):
@@ -233,12 +267,6 @@ func leave_match_for_peer(peer_id):
 	for id in peer_ids:
 		announce_leave_match.rpc_id(id, arena.name)
 
-	# TODO: this might be redundant
-	print("Freeing arena for peer id: ", peer_id)
-	var match_id = arena.match_id
-	matches.erase(match_id)
-	arena.queue_free()
-
 @rpc("call_local", "reliable")
 func announce_leave_match(arena_name):
 	print("Freeing arena for peer id: ", multiplayer.get_unique_id())
@@ -246,6 +274,7 @@ func announce_leave_match(arena_name):
 		var arena = $Matches.get_node(arena_name)
 		var match_id = arena.match_id
 		matches.erase(match_id)
+		erase_net_nodes_in_match(match_id)
 		arena.queue_free()
 
 	if DisplayServer.get_name() != "headless":

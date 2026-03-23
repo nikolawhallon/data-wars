@@ -42,7 +42,7 @@ func _process(_delta: float) -> void:
 	for water in NodeUtils.get_nodes_in_group_for_node(self, "Water"):
 		liters += water.liters
 
-	if state == State.PLAYING and multiplayer.is_server() and liters == 0 and false:
+	if state == State.PLAYING and multiplayer.is_server() and liters == 0:
 		var most_clicks := -1
 		var winner_ids := []
 
@@ -63,9 +63,9 @@ func _process(_delta: float) -> void:
 		blow_everything_up()
 
 @rpc("call_local", "reliable")
-func announce_team(type, id):
-	for child in get_children():
-		if child.has_method("get") and child.get("id") == id:
+func announce_team(type, peer_id):
+	for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
+		if team.peer_id == peer_id:
 			return
 
 	var num_teams = len(NodeUtils.get_nodes_in_group_for_node(self, "Team"))
@@ -74,7 +74,7 @@ func announce_team(type, id):
 	var inverted = false
 	if num_teams % 2 == 1:
 		inverted = true
-	team.init(type, id, inverted)
+	team.init(get_node("/root/App").get_new_net_id(), peer_id, type, inverted)
 	print("Adding team")
 	add_child(team, true)
 
@@ -110,14 +110,13 @@ func announce_game_over(winner_ids):
 func blow_everything_up():
 	for unit in NodeUtils.get_nodes_in_group_for_node(self, "Unit"):
 		var explosion = load("res://scenes/explosion.tscn").instantiate()
-		explosion.init(unit.global_position)
+		explosion.init(get_node("/root/App").get_new_net_id(), unit.global_position)
 		$Replicated.add_child(explosion, true)
 		unit.queue_free()
 
 	for building in NodeUtils.get_nodes_in_group_for_node(self, "Building"):
 		var site = load("res://scenes/site.tscn").instantiate()
-		site.water_path = building.water_path
-		site.global_position = building.global_position
+		site.init(get_node("/root/App").get_new_net_id(), building.water_net_id, building.global_position)
 		$Replicated.add_child(site, true)
 
 		for i in 10:
@@ -126,7 +125,7 @@ func blow_everything_up():
 				randf_range(-24.0, 24.0),
 				randf_range(-24.0, 24.0)
 			)
-			explosion.init(pos)
+			explosion.init(get_node("/root/App").get_new_net_id(), pos)
 			$Replicated.add_child(explosion, true)
 
 		building.queue_free()
@@ -151,7 +150,7 @@ func construct_building_for_peer(peer_id):
 
 	for site in NodeUtils.get_nodes_in_group_for_node(self, "Site"):
 		var data_center = load("res://scenes/data_center.tscn").instantiate()
-		data_center.init(team.get_path(), site.global_position, site.water_path)
+		data_center.init(get_node("/root/App").get_new_net_id(), team.net_id, site.water_net_id, site.global_position)
 		$Replicated.add_child(data_center, true)
 		site.queue_free()
 		break
@@ -175,7 +174,7 @@ func produce_unit_for_peer(peer_id):
 		return
 
 	for data_center in NodeUtils.get_nodes_in_group_for_node(self, "DataCenter"):
-		if team != get_node(data_center.team_path):
+		if team != get_node("/root/App").get_node_for_net_id(data_center.team_net_id):
 			continue
 		if data_center.producing != "":
 			continue
@@ -201,9 +200,9 @@ func target_for_peer(peer_id):
 		return
 
 	for spam_bot in NodeUtils.get_nodes_in_group_for_node(self, "SpamBot"):
-		if team != get_node(spam_bot.team_path):
+		if team != get_node("/root/App").get_node_for_net_id(spam_bot.team_net_id):
 			continue
-		if spam_bot.target != null:
+		if spam_bot.target_net_id != -1 or spam_bot.target_position != Vector2.ZERO:
 			continue
 
 		var transmission_towers = NodeUtils.get_nodes_in_group_for_node(self, "TransmissionTower")
@@ -211,5 +210,5 @@ func target_for_peer(peer_id):
 		if transmission_tower == null:
 			return
 
-		spam_bot.target = transmission_tower
+		spam_bot.target_net_id = transmission_tower.net_id
 		break

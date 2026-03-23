@@ -37,6 +37,9 @@ properties/1/replication_mode = 1
 properties/2/path = NodePath(".:frame")
 properties/2/spawn = true
 properties/2/replication_mode = 1
+properties/3/path = NodePath(".:net_id")
+properties/3/spawn = true
+properties/3/replication_mode = 1
 
 [node name="Water" type="AnimatedSprite2D" unique_id=1294920273 groups=["Landmark", "Water"]]
 sprite_frames = SubResource("SpriteFrames_a35vf")

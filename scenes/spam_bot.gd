@@ -3,24 +3,26 @@ extends CharacterBody2D
 
 const SPEED = 100.0
 
-@export var team_path: NodePath
-var target = null
+@export var net_id = -1
+@export var team_net_id = -1
+@export var target_net_id = -1
+@export var target_position = Vector2.ZERO
 
-func init(initial_team_path, initial_position):
-	team_path = initial_team_path
+func init(initial_net_id, initial_team_net_id, initial_position):
+	net_id = initial_net_id
+	team_net_id = initial_team_net_id
 	global_position = initial_position
 
 func _ready():
+	var app = get_node("/root/App")
+	app.register_net_node(net_id, self)
+
 	$AnimatedSprite2D.play("default")
 	apply_team_palette()
 
 func apply_team_palette():
-	if team_path.is_empty():
-		return
-
-	var team = get_node_or_null(team_path)
-	if team == null:
-		return
+	var app = get_node("/root/App")
+	var team = app.get_node_for_net_id(team_net_id)
 
 	if not team.inverted:
 		return
@@ -36,28 +38,33 @@ func _physics_process(_delta: float) -> void:
 	if not multiplayer.is_server():
 		return
 
-	var target_position = null
+	var actual_target_position = null
 
-	if target == null:
+	if target_net_id != -1:
+		var target_node = get_node("/root/App").get_node_for_net_id(target_net_id)
+		if is_instance_valid(target_node):
+			actual_target_position = target_node.global_position
+		else:
+			# the target node was likely destroyed
+			target_net_id = -1
+
+	if actual_target_position == null and target_position != Vector2.ZERO:
+		actual_target_position = target_position
+
+	if actual_target_position == null:
 		var arena = NodeUtils.get_first_ancestor_in_group_for_node(self, "Arena")
 		var transmission_towers = NodeUtils.get_nodes_in_group_for_node(arena, "TransmissionTower")
 		for transmission_tower in transmission_towers:
 			var distance = global_position.distance_to(transmission_tower.global_position)
 			if distance < 256:
-				target = transmission_tower
+				target_net_id = transmission_tower.net_id
+				actual_target_position = transmission_tower.global_position
 				break
 
-	if typeof(target) == TYPE_VECTOR2:
-		target_position = target
-	elif !is_instance_valid(target):
-		target = null
-		return
-	elif target is Node:
-		target_position = target.global_position
-	else:
+	if actual_target_position == null:
 		return
 
-	var direction = (target_position - position).normalized()
+	var direction = (actual_target_position - position).normalized()
 	velocity = direction * SPEED
 
 	move_and_slide()
@@ -66,6 +73,7 @@ func _physics_process(_delta: float) -> void:
 		$AnimatedSprite2D.flip_h = true
 	elif velocity.x < 0:
 		$AnimatedSprite2D.flip_h = false
-	
-	if global_position.distance_to(target_position) < 16:
-		target = null
+
+	if global_position.distance_to(actual_target_position) < 16:
+		target_net_id = -1
+		target_position = Vector2.ZERO

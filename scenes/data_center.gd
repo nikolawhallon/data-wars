@@ -3,32 +3,34 @@ extends Area2D
 
 var rng = RandomNumberGenerator.new()
 
-@export var team_path: NodePath
+@export var net_id = -1
+@export var team_net_id = -1
 @export var producing := "":
 	set(value):
 		if producing == value:
 			return
 		producing = value
 		update_animation()
-@export var water_path: NodePath
+@export var water_net_id = -1
 
-func init(initial_team_path, initial_position, initial_water_path):
-	team_path = initial_team_path
+func init(initial_net_id, initial_team_net_id, initial_water_net_id, initial_position):
+	net_id = initial_net_id
+	team_net_id = initial_team_net_id
 	global_position = initial_position
-	water_path = initial_water_path
+	water_net_id = initial_water_net_id
 
 func _ready() -> void:
+	var app = get_node("/root/App")
+	app.register_net_node(net_id, self)
+
 	rng.randomize()
+
 	update_animation()
 	apply_team_palette()
 
 func apply_team_palette():
-	if team_path.is_empty():
-		return
-
-	var team = get_node_or_null(team_path)
-	if team == null:
-		return
+	var app = get_node("/root/App")
+	var team = app.get_node_for_net_id(team_net_id)
 
 	if not team.inverted:
 		return
@@ -50,8 +52,8 @@ func _on_water_timer_timeout() -> void:
 	if not multiplayer.is_server():
 		return
 
-	var water = get_node(water_path)
-	var team = get_node(team_path)
+	var water = get_node("/root/App").get_node_for_net_id(water_net_id)
+	var team = get_node("/root/App").get_node_for_net_id(team_net_id)
 
 	var consumed = water.decrement(1)
 	if consumed <= 0:
@@ -65,7 +67,7 @@ func _on_unit_timer_timeout() -> void:
 
 	if producing == "spam_bot":
 		var spam_bot = load("res://scenes/spam_bot.tscn").instantiate()
-		spam_bot.init(team_path, global_position + Vector2(
+		spam_bot.init(get_node("/root/App").get_new_net_id(), team_net_id, global_position + Vector2(
 			rng.randf_range(-64.0, 64.0),
 			rng.randf_range(-64.0, 64.0)
 		))
@@ -83,7 +85,7 @@ func produce_unit(type):
 	if type != "spam_bot":
 		return "Unable to build unit: Data Centers can only produce Spam Bots (spam_bot)"
 
-	var team = get_node(team_path)
+	var team = get_node("/root/App").get_node_for_net_id(team_net_id)
 
 	if team.data < 20:
 		return "Spam Bots require 20 Data to build, Team does not have enough Data"
