@@ -52,6 +52,9 @@ func get_arena_for_peer(peer_id):
 
 func get_peer_ids_for_match(match_id):
 	var peer_ids = []
+	if !matches.has(match_id):
+		return peer_ids
+
 	for proto_team in matches[match_id]["proto_teams"]:
 		peer_ids.append(proto_team["peer_id"])
 
@@ -238,44 +241,50 @@ func announce_start_match(match_id, random_seed):
 	var arena = $Matches.get_node("Arena_%d" % match_id)
 	arena.announce_play_game(random_seed)
 
-func _on_arena_leave_requested():
+func _on_arena_leave_requested(arena):
 	if multiplayer.is_server():
-		leave_match_for_peer(multiplayer.get_unique_id())
+		leave_match_for_peer(arena.match_id)
 	else:
-		request_leave_match.rpc_id(1)
+		request_leave_match.rpc_id(1, arena.match_id)
 
 @rpc("any_peer", "reliable")
-func request_leave_match():
+func request_leave_match(match_id):
 	if not multiplayer.is_server():
 		return
 
-	leave_match_for_peer(multiplayer.get_remote_sender_id())
+	leave_match_for_peer(match_id)
 
-func leave_match_for_peer(peer_id):
-	var arena = get_arena_for_peer(peer_id)
-	if arena == null:
-		print("WARN - no arena for peer id: ", peer_id)
+func leave_match_for_peer(match_id):
+	var arena_name = "Arena_%d" % match_id                                                                                                                  
+	if !$Matches.has_node(arena_name):
+		print("ERROR - arena does not exist for match_id: ", match_id)
 		return
+
+	var arena = $Matches.get_node(arena_name)
 
 	var peer_ids = []
 	for team in NodeUtils.get_nodes_in_group_for_node(arena, "Team"):
 		peer_ids.append(team.peer_id)
 
 	if DisplayServer.get_name() == "headless":
-		announce_leave_match.rpc_id(1, arena.name)
+		announce_leave_match.rpc_id(1, match_id)
 
 	for id in peer_ids:
-		announce_leave_match.rpc_id(id, arena.name)
+		announce_leave_match.rpc_id(id, match_id)
 
 @rpc("call_local", "reliable")
-func announce_leave_match(arena_name):
+func announce_leave_match(match_id):
+	var arena_name = "Arena_%d" % match_id
+	if !$Matches.has_node(arena_name):
+		print("ERROR - arena does not exist for match_id: ", match_id)
+		return
+
+	var arena = $Matches.get_node(arena_name)
+
 	print("Freeing arena for peer id: ", multiplayer.get_unique_id())
-	if $Matches.has_node(arena_name):
-		var arena = $Matches.get_node(arena_name)
-		var match_id = arena.match_id
-		matches.erase(match_id)
-		erase_net_nodes_in_match(match_id)
-		arena.queue_free()
+	matches.erase(match_id)
+	erase_net_nodes_in_match(match_id)
+	arena.queue_free()
 
 	if DisplayServer.get_name() != "headless":
 		multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
