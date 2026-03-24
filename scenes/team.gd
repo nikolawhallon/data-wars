@@ -54,3 +54,7 @@ func _process(delta: float) -> void:
 
 func is_local_human():
 	return type == "human" and peer_id == multiplayer.get_unique_id()
+
+func _exit_tree():
+	if net_id != -1:
+		get_node("/root/App").net_nodes.erase(net_id)

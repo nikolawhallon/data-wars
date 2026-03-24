@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://dbytbevm1bbtr" path="res://scenes/transmission_tower.gd" id="1_fpcqo"]
 [ext_resource type="Texture2D" uid="uid://d1lbvbylfs2k6" path="res://assets/transmission_tower/transmission_tower_1.png" id="2_u3xvk"]
 [ext_resource type="Texture2D" uid="uid://bmg1g83f8bc7o" path="res://assets/transmission_tower/transmission_tower_2.png" id="3_onnm2"]
-[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/match_visibility.tscn" id="4_onnm2"]
+[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/helpers/match_visibility.tscn" id="4_onnm2"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_4i1r2"]
 animations = [{

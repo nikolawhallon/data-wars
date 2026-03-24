@@ -16,27 +16,51 @@ var state := State.PLAYING
 func _ready() -> void:
 	rng.randomize()
 
+func init(initial_match_id, proto_teams):
+	match_id = initial_match_id
+
+	for proto_team in proto_teams:
+		create_team(proto_team["type"], proto_team["peer_id"], proto_team["net_id"])
+
+func get_local_human_team_net_id():
+	for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
+		if team.peer_id == multiplayer.get_unique_id() and team.type == "human":
+			return team.net_id
+	return null
+
 func _process(_delta: float) -> void:
 	if Input.is_action_just_pressed("leave"):
 		emit_signal("leave_requested")
 
 	if state == State.PLAYING and Input.is_action_just_pressed("building"):
-		if multiplayer.is_server():
-			construct_building_for_peer(multiplayer.get_unique_id())
+		var team_net_id = get_local_human_team_net_id()
+		if team_net_id != null:
+			if multiplayer.is_server():
+				construct_building_for_team(team_net_id)
+			else:
+				request_construct_building.rpc_id(1, team_net_id)
 		else:
-			request_construct_building.rpc_id(1)
+			print("WARN - no local human team found for building action")
 
 	if state == State.PLAYING and Input.is_action_just_pressed("unit"):
-		if multiplayer.is_server():
-			produce_unit_for_peer(multiplayer.get_unique_id())
+		var team_net_id = get_local_human_team_net_id()
+		if team_net_id != null:
+			if multiplayer.is_server():
+				produce_unit_for_team(team_net_id)
+			else:
+				request_produce_unit.rpc_id(1, team_net_id)
 		else:
-			request_produce_unit.rpc_id(1)
+			print("WARN - no local human team found for unit action")
 
 	if state == State.PLAYING and Input.is_action_just_pressed("target"):
-		if multiplayer.is_server():
-			target_for_peer(multiplayer.get_unique_id())
+		var team_net_id = get_local_human_team_net_id()
+		if team_net_id != null:
+			if multiplayer.is_server():
+				target_for_team(team_net_id)
+			else:
+				request_target.rpc_id(1, team_net_id)
 		else:
-			request_target.rpc_id(1)
+			print("WARN - no local human team found for target action")
 
 	var liters := 0
 	for water in NodeUtils.get_nodes_in_group_for_node(self, "Water"):
@@ -44,37 +68,32 @@ func _process(_delta: float) -> void:
 
 	if state == State.PLAYING and multiplayer.is_server() and liters == 0:
 		var most_clicks := -1
-		var winner_ids := []
+		var winner_net_ids := []
 
 		for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
 			if team.clicks > most_clicks:
 				most_clicks = team.clicks
-				winner_ids = [team.peer_id]
+				winner_net_ids = [team.net_id]
 			elif team.clicks == most_clicks:
-				winner_ids.append(team.peer_id)
+				winner_net_ids.append(team.net_id)
 
 		if DisplayServer.get_name() == "headless":
-			announce_game_over.rpc_id(1, winner_ids)
+			announce_game_over.rpc_id(1, winner_net_ids)
 		for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
-			announce_game_over.rpc_id(team.peer_id, winner_ids)
+			announce_game_over.rpc_id(team.peer_id, winner_net_ids)
  
 	if state == State.GAME_OVER and multiplayer.is_server():
 		# yes, this blows everything up all the time, if state is GAME_OVER, this is on purpose
 		blow_everything_up()
 
-@rpc("call_local", "reliable")
-func announce_team(type, peer_id):
-	for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
-		if team.peer_id == peer_id:
-			return
-
+func create_team(type, peer_id, net_id):
 	var num_teams = len(NodeUtils.get_nodes_in_group_for_node(self, "Team"))
 
 	var team = load("res://scenes/team.tscn").instantiate()
 	var inverted = false
 	if num_teams % 2 == 1:
 		inverted = true
-	team.init(get_node("/root/App").get_new_net_id(), peer_id, type, inverted)
+	team.init(net_id, peer_id, type, inverted)
 	print("Adding team")
 	add_child(team, true)
 
@@ -101,10 +120,11 @@ func announce_play_game(random_seed):
 	$UI.init(non_inverted_team, inverted_team)
 
 @rpc("call_local", "reliable")
-func announce_game_over(winner_ids):
+func announce_game_over(winner_net_ids):
 	print("announce_game_over")
 	state = State.GAME_OVER
-	var won = winner_ids.has(multiplayer.get_unique_id())
+	var local_team_net_id = get_local_human_team_net_id()
+	var won = local_team_net_id != null and winner_net_ids.has(local_team_net_id)
 	$UI.show_game_over(won)
 
 func blow_everything_up():
@@ -131,21 +151,17 @@ func blow_everything_up():
 		building.queue_free()
 
 @rpc("any_peer", "reliable")
-func request_construct_building():
+func request_construct_building(team_net_id):
 	if not multiplayer.is_server():
 		return
 
-	construct_building_for_peer(multiplayer.get_remote_sender_id())
+	construct_building_for_team(team_net_id)
 
-func construct_building_for_peer(peer_id):
-	var team = null
-	for candidate in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
-		if candidate.peer_id == peer_id:
-			team = candidate
-			break
+func construct_building_for_team(team_net_id):
+	var team = get_node("/root/App").get_node_for_net_id(team_net_id)
 
 	if team == null:
-		print("No team for peer ", peer_id)
+		print("ERROR - no team for net_id: ", team_net_id)
 		return
 
 	for site in NodeUtils.get_nodes_in_group_for_node(self, "Site"):
@@ -156,21 +172,17 @@ func construct_building_for_peer(peer_id):
 		break
 
 @rpc("any_peer", "reliable")
-func request_produce_unit():
+func request_produce_unit(team_net_id):
 	if not multiplayer.is_server():
 		return
 
-	produce_unit_for_peer(multiplayer.get_remote_sender_id())
+	produce_unit_for_team(team_net_id)
 
-func produce_unit_for_peer(peer_id):
-	var team = null
-	for candidate in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
-		if candidate.peer_id == peer_id:
-			team = candidate
-			break
+func produce_unit_for_team(team_net_id):
+	var team = get_node("/root/App").get_node_for_net_id(team_net_id)
 
 	if team == null:
-		print("No team for peer ", peer_id)
+		print("ERROR - no team for net_id: ", team_net_id)
 		return
 
 	for data_center in NodeUtils.get_nodes_in_group_for_node(self, "DataCenter"):
@@ -182,21 +194,17 @@ func produce_unit_for_peer(peer_id):
 		break
 
 @rpc("any_peer", "reliable")
-func request_target():
+func request_target(team_net_id):
 	if not multiplayer.is_server():
 		return
 
-	target_for_peer(multiplayer.get_remote_sender_id())
+	target_for_team(team_net_id)
 
-func target_for_peer(peer_id):
-	var team = null
-	for candidate in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
-		if candidate.peer_id == peer_id:
-			team = candidate
-			break
+func target_for_team(team_net_id):
+	var team = get_node("/root/App").get_node_for_net_id(team_net_id)
 
 	if team == null:
-		print("No team for peer ", peer_id)
+		print("ERROR - no team for net_id: ", team_net_id)
 		return
 
 	for spam_bot in NodeUtils.get_nodes_in_group_for_node(self, "SpamBot"):

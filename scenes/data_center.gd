@@ -93,5 +93,9 @@ func produce_unit(type):
 	team.data -= 20
 	producing = type
 	$UnitTimer.start()
-	
+
 	return "Successfully started building unit"
+
+func _exit_tree():
+	if net_id != -1:
+		get_node("/root/App").net_nodes.erase(net_id)

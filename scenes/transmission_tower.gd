@@ -23,3 +23,7 @@ func _on_body_entered(body: Node2D) -> void:
 	var team = get_node("/root/App").get_node_for_net_id(body.team_net_id)
 	team.clicks += 1
 	body.queue_free()
+
+func _exit_tree():
+	if net_id != -1:
+		get_node("/root/App").net_nodes.erase(net_id)

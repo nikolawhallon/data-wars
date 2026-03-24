@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://q1xyygateqac"]
 
 [ext_resource type="Script" uid="uid://cesoi4rv7uoyi" path="res://scenes/team.gd" id="1_hisic"]
-[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/match_visibility.tscn" id="2_jn8yb"]
+[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/helpers/match_visibility.tscn" id="2_jn8yb"]
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_hisic"]
 properties/0/path = NodePath(".:data")

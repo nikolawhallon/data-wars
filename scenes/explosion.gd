@@ -18,3 +18,7 @@ func _on_animation_finished() -> void:
 		return
 
 	queue_free()
+
+func _exit_tree():
+	if net_id != -1:
+		get_node("/root/App").net_nodes.erase(net_id)

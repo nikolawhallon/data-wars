@@ -27,5 +27,9 @@ func decrement(amount):
 		frame = 2
 	elif liters < 400:
 		frame = 1
-			
+
 	return consumed
+
+func _exit_tree():
+	if net_id != -1:
+		get_node("/root/App").net_nodes.erase(net_id)

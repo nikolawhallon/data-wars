@@ -77,3 +77,7 @@ func _physics_process(_delta: float) -> void:
 	if global_position.distance_to(actual_target_position) < 16:
 		target_net_id = -1
 		target_position = Vector2.ZERO
+
+func _exit_tree():
+	if net_id != -1:
+		get_node("/root/App").net_nodes.erase(net_id)

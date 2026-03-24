@@ -6,7 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://dy71ythy4ef3b" path="res://assets/explosion/explosion_4.png" id="4_cun36"]
 [ext_resource type="Texture2D" uid="uid://cnp0uodtecgtw" path="res://assets/explosion/explosion_5.png" id="5_vk406"]
 [ext_resource type="Script" uid="uid://den7uq7tr8cq" path="res://scenes/explosion.gd" id="6_xfoey"]
-[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/match_visibility.tscn" id="7_v8gpv"]
+[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/helpers/match_visibility.tscn" id="7_v8gpv"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_4jttm"]
 animations = [{

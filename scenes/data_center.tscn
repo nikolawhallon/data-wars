@@ -7,7 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://dsikft8sgunqv" path="res://assets/data_center/data_center_producing_2.png" id="5_ha7m5"]
 [ext_resource type="Texture2D" uid="uid://my8r3cmagknf" path="res://assets/data_center/data_center_producing_3.png" id="6_ryyxn"]
 [ext_resource type="Texture2D" uid="uid://bt0ymt5vysj7y" path="res://assets/data_center/data_center_producing_4.png" id="7_gh7pg"]
-[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/match_visibility.tscn" id="8_3elua"]
+[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/helpers/match_visibility.tscn" id="8_3elua"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_57g4l"]
 animations = [{

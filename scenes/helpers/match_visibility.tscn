@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c4op0islxnvi6"]
 
-[ext_resource type="Script" uid="uid://c4udtt5lkxg3" path="res://scenes/match_visibility.gd" id="1_8ysdj"]
+[ext_resource type="Script" uid="uid://c4udtt5lkxg3" path="res://scenes/helpers/match_visibility.gd" id="1_8ysdj"]
 
 [node name="MatchVisibility" type="Node" unique_id=1055588141]
 script = ExtResource("1_8ysdj")

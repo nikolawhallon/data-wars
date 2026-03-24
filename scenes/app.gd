@@ -50,6 +50,12 @@ func get_arena_for_peer(peer_id):
 				return arena
 	return null
 
+func get_arena_by_match_id(match_id):
+	for arena in $Matches.get_children():
+		if arena.match_id == match_id:
+			return arena
+	return null
+
 func get_peer_ids_for_match(match_id):
 	var peer_ids = []
 	if !matches.has(match_id):
@@ -85,8 +91,8 @@ func _process(_delta: float) -> void:
 
 	if Input.is_action_just_pressed("single_player"):
 		var proto_teams = [
-			{"type": "human", "peer_id": 1, "ready": false},
-			{"type": "computer", "peer_id": 2, "ready": true}, # this feels hacky
+			{"type": "human", "peer_id": 1, "ready": false, "net_id": get_new_net_id()},
+			{"type": "computer", "peer_id": 1, "ready": true, "net_id": get_new_net_id()},
 		]
 
 		var match_id = rng.randi()
@@ -168,6 +174,7 @@ func try_match_making():
 				"type": "human",
 				"peer_id": waiting_peer_ids.pop_front(),
 				"ready": false,
+				"net_id": get_new_net_id(),
 			})
 
 		var match_id = rng.randi()
@@ -191,13 +198,9 @@ func try_match_making():
 @rpc("call_local", "reliable")
 func announce_boot_arena(match_id, proto_teams):
 	var arena = load("res://scenes/arena.tscn").instantiate()
-	arena.name = "Arena_%d" % match_id
-	arena.match_id = match_id
+	arena.init(match_id, proto_teams)
 	$Matches.add_child(arena, true)
 	arena.leave_requested.connect(_on_arena_leave_requested.bind(arena))
-
-	for proto_team in proto_teams:
-		arena.announce_team(proto_team["type"], proto_team["peer_id"])
 
 	if multiplayer.is_server():
 		mark_match_ready_for_peer(multiplayer.get_unique_id(), match_id)
@@ -230,15 +233,21 @@ func mark_match_ready_for_peer(peer_id, match_id):
 	var random_seed = matches[match_id]["seed"]
 	matches[match_id]["state"] = "playing"
 
+	# Collect unique peer_ids to avoid duplicate RPCs
+	var peer_ids = []
+	for proto_team in proto_teams:
+		if not peer_ids.has(proto_team["peer_id"]):
+			peer_ids.append(proto_team["peer_id"])
+
 	if DisplayServer.get_name() == "headless":
 		announce_start_match.rpc_id(1, match_id, random_seed)
 
-	for proto_team in proto_teams:
-		announce_start_match.rpc_id(proto_team["peer_id"], match_id, random_seed)
+	for id in peer_ids:
+		announce_start_match.rpc_id(id, match_id, random_seed)
 
 @rpc("call_local", "reliable")
 func announce_start_match(match_id, random_seed):
-	var arena = $Matches.get_node("Arena_%d" % match_id)
+	var arena = get_arena_by_match_id(match_id)
 	arena.announce_play_game(random_seed)
 
 func _on_arena_leave_requested(arena):
@@ -255,12 +264,10 @@ func request_leave_match(match_id):
 	leave_match_for_peer(match_id)
 
 func leave_match_for_peer(match_id):
-	var arena_name = "Arena_%d" % match_id                                                                                                                  
-	if !$Matches.has_node(arena_name):
+	var arena = get_arena_by_match_id(match_id)
+	if arena == null:
 		print("ERROR - arena does not exist for match_id: ", match_id)
 		return
-
-	var arena = $Matches.get_node(arena_name)
 
 	var peer_ids = []
 	for team in NodeUtils.get_nodes_in_group_for_node(arena, "Team"):
@@ -274,12 +281,10 @@ func leave_match_for_peer(match_id):
 
 @rpc("call_local", "reliable")
 func announce_leave_match(match_id):
-	var arena_name = "Arena_%d" % match_id
-	if !$Matches.has_node(arena_name):
+	var arena = get_arena_by_match_id(match_id)
+	if arena == null:
 		print("ERROR - arena does not exist for match_id: ", match_id)
 		return
-
-	var arena = $Matches.get_node(arena_name)
 
 	print("Freeing arena for peer id: ", multiplayer.get_unique_id())
 	matches.erase(match_id)
