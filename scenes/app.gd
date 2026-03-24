@@ -104,7 +104,7 @@ func _process(_delta: float) -> void:
 			"seed": random_seed,
 		}
 
-		announce_boot_arena.rpc_id(1, match_id, proto_teams)
+		announce_boot_arena.rpc_id(1, match_id)
 
 func _on_peer_connected(peer_id: int) -> void:
 	print("Peer connected: ", peer_id)
@@ -190,15 +190,15 @@ func try_match_making():
 		}
 
 		if DisplayServer.get_name() == "headless":
-			announce_boot_arena.rpc_id(1, match_id, proto_teams)
+			announce_boot_arena.rpc_id(1, match_id)
 
 		for proto_team in proto_teams:
-			announce_boot_arena.rpc_id(proto_team["peer_id"], match_id, proto_teams)
+			announce_boot_arena.rpc_id(proto_team["peer_id"], match_id)
 
 @rpc("call_local", "reliable")
-func announce_boot_arena(match_id, proto_teams):
+func announce_boot_arena(match_id):
 	var arena = load("res://scenes/arena.tscn").instantiate()
-	arena.init(match_id, proto_teams)
+	arena.match_id = match_id
 	$Matches.add_child(arena, true)
 	arena.leave_requested.connect(_on_arena_leave_requested.bind(arena))
 
@@ -233,6 +233,8 @@ func mark_match_ready_for_peer(peer_id, match_id):
 	var random_seed = matches[match_id]["seed"]
 	matches[match_id]["state"] = "playing"
 
+	var arena = get_arena_by_match_id(match_id)
+
 	# Collect unique peer_ids to avoid duplicate RPCs
 	var peer_ids = []
 	for proto_team in proto_teams:
@@ -240,15 +242,10 @@ func mark_match_ready_for_peer(peer_id, match_id):
 			peer_ids.append(proto_team["peer_id"])
 
 	if DisplayServer.get_name() == "headless":
-		announce_start_match.rpc_id(1, match_id, random_seed)
+		arena.announce_start_game.rpc_id(1, random_seed, proto_teams)
 
 	for id in peer_ids:
-		announce_start_match.rpc_id(id, match_id, random_seed)
-
-@rpc("call_local", "reliable")
-func announce_start_match(match_id, random_seed):
-	var arena = get_arena_by_match_id(match_id)
-	arena.announce_play_game(random_seed)
+		arena.announce_start_game.rpc_id(id, random_seed, proto_teams)
 
 func _on_arena_leave_requested(arena):
 	if multiplayer.is_server():

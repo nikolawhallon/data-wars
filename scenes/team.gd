@@ -5,10 +5,10 @@ signal minerals_updated
 signal data_updated
 signal clicks_updated
 
-var type = ""
-var peer_id = -1
+@export var type = ""
+@export var peer_id = -1
 @export var net_id = -1
-var inverted = false
+@export var inverted = false
 
 @export var minerals := 0:
 	set(value):

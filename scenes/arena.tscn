@@ -15,7 +15,7 @@ script = ExtResource("1_olpmc")
 [node name="Replicated" type="Node2D" parent="." unique_id=1500467810]
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1203264165]
-_spawnable_scenes = PackedStringArray("uid://cie4t3j8pbmx5", "uid://wr2c42ml2uv5", "uid://cbxlvmqrnim3a", "uid://bls6qhp61hhmy", "uid://b3tp1of0u3u20", "uid://5s72q6dpfwc6", "uid://b2apqrnoadbkr")
+_spawnable_scenes = PackedStringArray("uid://cie4t3j8pbmx5", "uid://wr2c42ml2uv5", "uid://cbxlvmqrnim3a", "uid://bls6qhp61hhmy", "uid://b3tp1of0u3u20", "uid://5s72q6dpfwc6", "uid://b2apqrnoadbkr", "uid://q1xyygateqac")
 spawn_path = NodePath("../Replicated")
 
 [node name="UI" parent="." unique_id=1183069547 instance=ExtResource("4_xdvfk")]

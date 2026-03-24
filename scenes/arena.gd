@@ -7,20 +7,16 @@ var rng := RandomNumberGenerator.new()
 var match_id = null
 
 enum State {
+	VOID,
+	STARTING,
 	PLAYING,
 	GAME_OVER
 }
 
-var state := State.PLAYING
+var state := State.VOID
 
 func _ready() -> void:
 	rng.randomize()
-
-func init(initial_match_id, proto_teams):
-	match_id = initial_match_id
-
-	for proto_team in proto_teams:
-		create_team(proto_team["type"], proto_team["peer_id"], proto_team["net_id"])
 
 func get_local_human_team_net_id():
 	for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
@@ -29,6 +25,22 @@ func get_local_human_team_net_id():
 	return null
 
 func _process(_delta: float) -> void:
+	# Transition from STARTING to PLAYING once teams are spawned
+	if state == State.STARTING:
+		var teams = NodeUtils.get_nodes_in_group_for_node(self, "Team")
+		if teams.size() >= 2:
+			var non_inverted_team = null
+			var inverted_team = null
+			for team in teams:
+				if team.inverted:
+					inverted_team = team
+				else:
+					non_inverted_team = team
+
+			if non_inverted_team != null and inverted_team != null:
+				$UI.init(non_inverted_team, inverted_team)
+				state = State.PLAYING
+
 	if Input.is_action_just_pressed("leave"):
 		emit_signal("leave_requested")
 
@@ -95,29 +107,21 @@ func create_team(type, peer_id, net_id):
 		inverted = true
 	team.init(net_id, peer_id, type, inverted)
 	print("Adding team")
-	add_child(team, true)
+	$Replicated.add_child(team, true)
 
 @rpc("call_local", "reliable")
-func announce_play_game(random_seed):
-	print("announce_play_game for peer id: ", multiplayer.get_unique_id())
+func announce_start_game(random_seed, proto_teams):
+	print("announce_start_game for peer id: ", multiplayer.get_unique_id())
 	$Map.init(random_seed)
-	state = State.PLAYING
+	state = State.STARTING
 
 	if multiplayer.is_server():
+		for proto_team in proto_teams:
+			create_team(proto_team["type"], proto_team["peer_id"], proto_team["net_id"])
 		$Landmarks.init(random_seed, $Map, $Replicated)
 
-	var non_inverted_team = null
-	var inverted_team = null
-	for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
-		if team.inverted:
-			inverted_team = team
-		else:
-			non_inverted_team = team
-
-	if non_inverted_team == null or inverted_team == null:
-		print("ERROR - somehow we don't have two teams")
-
-	$UI.init(non_inverted_team, inverted_team)
+	# UI will be initialized when teams are ready (see _process)
+	# On server, teams exist immediately; on clients, they're replicated by MultiplayerSpawner
 
 @rpc("call_local", "reliable")
 func announce_game_over(winner_net_ids):
