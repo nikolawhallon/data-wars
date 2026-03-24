@@ -25,21 +25,11 @@ func get_local_human_team_net_id():
 	return null
 
 func _process(_delta: float) -> void:
-	# Transition from STARTING to PLAYING once teams are spawned
 	if state == State.STARTING:
 		var teams = NodeUtils.get_nodes_in_group_for_node(self, "Team")
-		if teams.size() >= 2:
-			var non_inverted_team = null
-			var inverted_team = null
-			for team in teams:
-				if team.inverted:
-					inverted_team = team
-				else:
-					non_inverted_team = team
-
-			if non_inverted_team != null and inverted_team != null:
-				$UI.init(non_inverted_team, inverted_team)
-				state = State.PLAYING
+		if len(teams) == 2:
+			$UI.init(teams)
+			state = State.PLAYING
 
 	if Input.is_action_just_pressed("leave"):
 		emit_signal("leave_requested")
@@ -98,30 +88,23 @@ func _process(_delta: float) -> void:
 		# yes, this blows everything up all the time, if state is GAME_OVER, this is on purpose
 		blow_everything_up()
 
-func create_team(type, peer_id, net_id):
-	var num_teams = len(NodeUtils.get_nodes_in_group_for_node(self, "Team"))
-
-	var team = load("res://scenes/team.tscn").instantiate()
-	var inverted = false
-	if num_teams % 2 == 1:
-		inverted = true
-	team.init(net_id, peer_id, type, inverted)
-	print("Adding team")
-	$Replicated.add_child(team, true)
-
 @rpc("call_local", "reliable")
 func announce_start_game(random_seed, proto_teams):
+	state = State.STARTING
 	print("announce_start_game for peer id: ", multiplayer.get_unique_id())
 	$Map.init(random_seed)
-	state = State.STARTING
 
 	if multiplayer.is_server():
-		for proto_team in proto_teams:
-			create_team(proto_team["type"], proto_team["peer_id"], proto_team["net_id"])
-		$Landmarks.init(random_seed, $Map, $Replicated)
+		assert(len(proto_teams) == 2)
 
-	# UI will be initialized when teams are ready (see _process)
-	# On server, teams exist immediately; on clients, they're replicated by MultiplayerSpawner
+		var non_inverted_team = load("res://scenes/team.tscn").instantiate()
+		non_inverted_team.init(proto_teams[0]["net_id"], proto_teams[0]["peer_id"], proto_teams[0]["type"], false)
+		$Replicated.add_child(non_inverted_team, true)
+		var inverted_team = load("res://scenes/team.tscn").instantiate()
+		inverted_team.init(proto_teams[1]["net_id"], proto_teams[1]["peer_id"], proto_teams[1]["type"], true)
+		$Replicated.add_child(inverted_team, true)
+
+		$Landmarks.init(random_seed, $Map, $Replicated)
 
 @rpc("call_local", "reliable")
 func announce_game_over(winner_net_ids):
@@ -143,7 +126,7 @@ func blow_everything_up():
 		site.init(get_node("/root/App").get_new_net_id(), building.water_net_id, building.global_position)
 		$Replicated.add_child(site, true)
 
-		for i in 10:
+		for i in 8:
 			var explosion = load("res://scenes/explosion.tscn").instantiate()
 			var pos = building.global_position + Vector2(
 				randf_range(-24.0, 24.0),
