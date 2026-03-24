@@ -8,6 +8,17 @@ var rng = RandomNumberGenerator.new()
 var waiting_peer_ids = []
 var matches = {}
 
+enum State {
+	DEFAULT,
+	HOST_PRESSED,
+	CONNECT_PRESSED,
+	WAITING,
+	PLAYING
+}
+
+var state = State.DEFAULT
+var quick_text_input = null
+
 func get_arena_for_peer(peer_id):
 	for arena in $Matches.get_children():
 		for team in NodeUtils.get_nodes_in_group_for_node(arena, "Team"):
@@ -42,19 +53,37 @@ func _ready():
 	print(DisplayServer.get_name())
 
 	if DisplayServer.get_name() == "headless":
-		host_game(8000)
+		if host_game(8000):
+			state = State.WAITING
 
 func _process(_delta: float) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
 
-	if Input.is_action_just_pressed("host"):
-		host_game(8000)
+	if Input.is_action_just_pressed("cancel"):
+		state = State.DEFAULT
+		multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+		$LobbyUI/InfoMarginContainer/Label.text = ""
+		if quick_text_input != null:
+			quick_text_input.queue_free()
 
-	if Input.is_action_just_pressed("connect"):
-		connect_game("127.0.0.1", 8000)
+	if state == State.DEFAULT and Input.is_action_just_pressed("host"):
+		state = State.HOST_PRESSED
+		quick_text_input = load("res://scenes/quick_text_input.tscn").instantiate()
+		quick_text_input.set_placeholder("PORT")
+		quick_text_input.text_submitted.connect(_on_host_text_submitted)
+		$LobbyUI.add_child(quick_text_input)
+		quick_text_input.grab_focus()
 
-	if Input.is_action_just_pressed("single_player"):
+	if state == State.DEFAULT and Input.is_action_just_pressed("connect"):
+		state = State.CONNECT_PRESSED
+		quick_text_input = load("res://scenes/quick_text_input.tscn").instantiate()
+		quick_text_input.set_placeholder("IP:PORT")
+		quick_text_input.text_submitted.connect(_on_connect_text_submitted)
+		$LobbyUI.add_child(quick_text_input)
+		quick_text_input.grab_focus()
+
+	if state == State.DEFAULT and Input.is_action_just_pressed("single_player"):
 		var proto_teams = [
 			{"type": "human", "peer_id": 1, "ready": false},
 			{"type": "computer", "peer_id": 1, "ready": true},
@@ -96,6 +125,28 @@ func _on_server_disconnected() -> void:
 		arena.queue_free()
 
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+
+func _on_host_text_submitted(text):
+	if host_game(int(text)):
+		if quick_text_input != null:
+			quick_text_input.queue_free()
+		state = State.WAITING
+		$LobbyUI/InfoMarginContainer/Label.text = "WAITING FOR OPPONENT"
+	else:
+		$LobbyUI/InfoMarginContainer/Label.text = "FAILED TO HOST"
+
+func _on_connect_text_submitted(text):
+	if len(text.split(":")) != 2:
+		$LobbyUI/InfoMarginContainer/Label.text = "FAILED TO CONNECT"
+		return
+
+	if connect_game(text.split(":")[0], int(text.split(":")[1])):
+		if quick_text_input != null:
+			quick_text_input.queue_free()
+		state = State.WAITING
+		$LobbyUI/InfoMarginContainer/Label.text = "WAITING FOR OPPONENT"
+	else:
+		$LobbyUI/InfoMarginContainer/Label.text = "FAILED TO CONNECT"
 
 func host_game(port):
 	if multiplayer.multiplayer_peer is ENetMultiplayerPeer:
@@ -167,6 +218,9 @@ func try_match_making():
 
 @rpc("call_local", "reliable")
 func announce_boot_arena(match_id):
+	$LobbyUI/InfoMarginContainer/Label.text = ""
+	$LobbyUI.visible = false
+
 	var arena = load("res://scenes/arena.tscn").instantiate()
 	arena.match_id = match_id
 	# NOTE: this is key - consistent Arena naming will allow me
@@ -251,6 +305,8 @@ func leave_match_for_peer(match_id):
 
 @rpc("call_local", "reliable")
 func announce_leave_match(match_id):
+	$LobbyUI.visible = true
+
 	var arena = get_arena_by_match_id(match_id)
 	if arena == null:
 		print("ERROR - arena does not exist for match_id: ", match_id)
@@ -261,4 +317,5 @@ func announce_leave_match(match_id):
 	arena.queue_free()
 
 	if DisplayServer.get_name() != "headless":
+		state = State.DEFAULT
 		multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()

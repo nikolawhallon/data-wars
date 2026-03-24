@@ -1,8 +1,47 @@
 [gd_scene format=3 uid="uid://bu83iy1t2hka0"]
 
 [ext_resource type="Script" uid="uid://io5jkgbst5vv" path="res://scenes/app.gd" id="1_0wu41"]
+[ext_resource type="LabelSettings" uid="uid://ywhly2wm7c3b" path="res://resources/label_16.tres" id="2_1670a"]
 
 [node name="App" type="Node" unique_id=804874336 groups=["App"]]
 script = ExtResource("1_0wu41")
 
 [node name="Matches" type="Node" parent="." unique_id=601754293]
+
+[node name="LobbyUI" type="CanvasLayer" parent="." unique_id=245613087]
+
+[node name="HotKeyMarginContainer" type="MarginContainer" parent="LobbyUI" unique_id=1721971272]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 89.0
+grow_horizontal = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Label" type="Label" parent="LobbyUI/HotKeyMarginContainer" unique_id=1215802914]
+layout_mode = 2
+size_flags_vertical = 0
+text = "[S]   SOLO
+[H]   HOST
+[C]   CONNECT
+[ESC] CANCEL"
+label_settings = ExtResource("2_1670a")
+
+[node name="InfoMarginContainer" type="MarginContainer" parent="LobbyUI" unique_id=1664326385]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Label" type="Label" parent="LobbyUI/InfoMarginContainer" unique_id=151707264]
+layout_mode = 2
+label_settings = ExtResource("2_1670a")
+horizontal_alignment = 1
