@@ -3,26 +3,20 @@ extends CharacterBody2D
 
 const SPEED = 100.0
 
-@export var net_id = -1
-@export var team_net_id = -1
-@export var target_net_id = -1
+@export var team_path: NodePath
+@export var target_path: NodePath
 @export var target_position = Vector2.ZERO
 
-func init(initial_net_id, initial_team_net_id, initial_position):
-	net_id = initial_net_id
-	team_net_id = initial_team_net_id
+func init(initial_team_path, initial_position):
+	team_path = initial_team_path
 	global_position = initial_position
 
 func _ready():
-	var app = get_node("/root/App")
-	app.register_net_node(net_id, self)
-
 	$AnimatedSprite2D.play("default")
 	apply_team_palette()
 
 func apply_team_palette():
-	var app = get_node("/root/App")
-	var team = app.get_node_for_net_id(team_net_id)
+	var team = get_node(team_path)
 
 	if not team.inverted:
 		return
@@ -40,13 +34,13 @@ func _physics_process(_delta: float) -> void:
 
 	var actual_target_position = null
 
-	if target_net_id != -1:
-		var target_node = get_node("/root/App").get_node_for_net_id(target_net_id)
+	if target_path != NodePath():
+		var target_node = get_node(target_path)
 		if is_instance_valid(target_node):
 			actual_target_position = target_node.global_position
 		else:
 			# the target node was likely destroyed
-			target_net_id = -1
+			target_path = NodePath()
 
 	if actual_target_position == null and target_position != Vector2.ZERO:
 		actual_target_position = target_position
@@ -57,7 +51,7 @@ func _physics_process(_delta: float) -> void:
 		for transmission_tower in transmission_towers:
 			var distance = global_position.distance_to(transmission_tower.global_position)
 			if distance < 256:
-				target_net_id = transmission_tower.net_id
+				target_path = transmission_tower.get_path()
 				actual_target_position = transmission_tower.global_position
 				break
 
@@ -75,9 +69,5 @@ func _physics_process(_delta: float) -> void:
 		$AnimatedSprite2D.flip_h = false
 
 	if global_position.distance_to(actual_target_position) < 16:
-		target_net_id = -1
+		target_path = NodePath()
 		target_position = Vector2.ZERO
-
-func _exit_tree():
-	if net_id != -1:
-		get_node("/root/App").net_nodes.erase(net_id)

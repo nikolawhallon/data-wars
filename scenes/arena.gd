@@ -15,54 +15,53 @@ enum State {
 
 var state := State.VOID
 
+func get_local_human_team():
+	for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
+		if team.peer_id == multiplayer.get_unique_id() and team.type == "human":
+			return team
+	return null
+	
 func _ready() -> void:
 	rng.randomize()
 
-func get_local_human_team_net_id():
-	for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
-		if team.peer_id == multiplayer.get_unique_id() and team.type == "human":
-			return team.net_id
-	return null
-
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if state == State.STARTING:
 		var teams = NodeUtils.get_nodes_in_group_for_node(self, "Team")
 		if len(teams) == 2:
-			$UI.init(teams)
+			$UI.connect_signals(teams)
 			state = State.PLAYING
 
 	if Input.is_action_just_pressed("leave"):
 		emit_signal("leave_requested")
 
+	if state == State.PLAYING:
+		var speed = 1000.0
+		var dir = Input.get_vector("move_left", "move_right", "move_up", "move_down")
+		$Camera2D.global_position += dir * speed * delta
+
 	if state == State.PLAYING and Input.is_action_just_pressed("building"):
-		var team_net_id = get_local_human_team_net_id()
-		if team_net_id != null:
+		var team = get_local_human_team()
+		if team:
 			if multiplayer.is_server():
-				construct_building_for_team(team_net_id)
+				construct_building_for_team(team.get_path())
 			else:
-				request_construct_building.rpc_id(1, team_net_id)
-		else:
-			print("WARN - no local human team found for building action")
+				request_construct_building.rpc_id(1, team.get_path())
 
 	if state == State.PLAYING and Input.is_action_just_pressed("unit"):
-		var team_net_id = get_local_human_team_net_id()
-		if team_net_id != null:
+		var team = get_local_human_team()
+		if team:
 			if multiplayer.is_server():
-				produce_unit_for_team(team_net_id)
+				produce_unit_for_team(team.get_path())
 			else:
-				request_produce_unit.rpc_id(1, team_net_id)
-		else:
-			print("WARN - no local human team found for unit action")
+				request_produce_unit.rpc_id(1, team.get_path())
 
 	if state == State.PLAYING and Input.is_action_just_pressed("target"):
-		var team_net_id = get_local_human_team_net_id()
-		if team_net_id != null:
+		var team = get_local_human_team()
+		if team:
 			if multiplayer.is_server():
-				target_for_team(team_net_id)
+				target_for_team(team.get_path())
 			else:
-				request_target.rpc_id(1, team_net_id)
-		else:
-			print("WARN - no local human team found for target action")
+				request_target.rpc_id(1, team.get_path())
 
 	var liters := 0
 	for water in NodeUtils.get_nodes_in_group_for_node(self, "Water"):
@@ -70,19 +69,19 @@ func _process(_delta: float) -> void:
 
 	if state == State.PLAYING and multiplayer.is_server() and liters == 0:
 		var most_clicks := -1
-		var winner_net_ids := []
+		var winner_team_paths := []
 
 		for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
 			if team.clicks > most_clicks:
 				most_clicks = team.clicks
-				winner_net_ids = [team.net_id]
+				winner_team_paths = [team.get_path()]
 			elif team.clicks == most_clicks:
-				winner_net_ids.append(team.net_id)
+				winner_team_paths.append(team.get_path())
 
 		if DisplayServer.get_name() == "headless":
-			announce_game_over.rpc_id(1, winner_net_ids)
+			announce_game_over.rpc_id(1, winner_team_paths)
 		for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
-			announce_game_over.rpc_id(team.peer_id, winner_net_ids)
+			announce_game_over.rpc_id(team.peer_id, winner_team_paths)
  
 	if state == State.GAME_OVER and multiplayer.is_server():
 		# yes, this blows everything up all the time, if state is GAME_OVER, this is on purpose
@@ -98,32 +97,32 @@ func announce_start_game(random_seed, proto_teams):
 		assert(len(proto_teams) == 2)
 
 		var non_inverted_team = load("res://scenes/team.tscn").instantiate()
-		non_inverted_team.init(proto_teams[0]["net_id"], proto_teams[0]["peer_id"], proto_teams[0]["type"], false)
+		non_inverted_team.init(proto_teams[0]["peer_id"], proto_teams[0]["type"], false)
 		$Replicated.add_child(non_inverted_team, true)
 		var inverted_team = load("res://scenes/team.tscn").instantiate()
-		inverted_team.init(proto_teams[1]["net_id"], proto_teams[1]["peer_id"], proto_teams[1]["type"], true)
+		inverted_team.init(proto_teams[1]["peer_id"], proto_teams[1]["type"], true)
 		$Replicated.add_child(inverted_team, true)
 
 		$Landmarks.init(random_seed, $Map, $Replicated)
 
 @rpc("call_local", "reliable")
-func announce_game_over(winner_net_ids):
+func announce_game_over(winner_team_paths):
 	print("announce_game_over")
 	state = State.GAME_OVER
-	var local_team_net_id = get_local_human_team_net_id()
-	var won = local_team_net_id != null and winner_net_ids.has(local_team_net_id)
+	var local_team = get_local_human_team()
+	var won = local_team != null and winner_team_paths.has(local_team.get_path())
 	$UI.show_game_over(won)
 
 func blow_everything_up():
 	for unit in NodeUtils.get_nodes_in_group_for_node(self, "Unit"):
 		var explosion = load("res://scenes/explosion.tscn").instantiate()
-		explosion.init(get_node("/root/App").get_new_net_id(), unit.global_position)
+		explosion.init(unit.global_position)
 		$Replicated.add_child(explosion, true)
 		unit.queue_free()
 
 	for building in NodeUtils.get_nodes_in_group_for_node(self, "Building"):
 		var site = load("res://scenes/site.tscn").instantiate()
-		site.init(get_node("/root/App").get_new_net_id(), building.water_net_id, building.global_position)
+		site.init(building.water_path, building.global_position)
 		$Replicated.add_child(site, true)
 
 		for i in 8:
@@ -132,48 +131,36 @@ func blow_everything_up():
 				randf_range(-24.0, 24.0),
 				randf_range(-24.0, 24.0)
 			)
-			explosion.init(get_node("/root/App").get_new_net_id(), pos)
+			explosion.init(pos)
 			$Replicated.add_child(explosion, true)
 
 		building.queue_free()
 
 @rpc("any_peer", "reliable")
-func request_construct_building(team_net_id):
+func request_construct_building(team_path):
 	if not multiplayer.is_server():
 		return
 
-	construct_building_for_team(team_net_id)
+	construct_building_for_team(team_path)
 
-func construct_building_for_team(team_net_id):
-	var team = get_node("/root/App").get_node_for_net_id(team_net_id)
-
-	if team == null:
-		print("ERROR - no team for net_id: ", team_net_id)
-		return
-
+func construct_building_for_team(team_path):
 	for site in NodeUtils.get_nodes_in_group_for_node(self, "Site"):
 		var data_center = load("res://scenes/data_center.tscn").instantiate()
-		data_center.init(get_node("/root/App").get_new_net_id(), team.net_id, site.water_net_id, site.global_position)
+		data_center.init(team_path, site.water_path, site.global_position)
 		$Replicated.add_child(data_center, true)
 		site.queue_free()
 		break
 
 @rpc("any_peer", "reliable")
-func request_produce_unit(team_net_id):
+func request_produce_unit(team_path):
 	if not multiplayer.is_server():
 		return
 
-	produce_unit_for_team(team_net_id)
+	produce_unit_for_team(team_path)
 
-func produce_unit_for_team(team_net_id):
-	var team = get_node("/root/App").get_node_for_net_id(team_net_id)
-
-	if team == null:
-		print("ERROR - no team for net_id: ", team_net_id)
-		return
-
+func produce_unit_for_team(team_path):
 	for data_center in NodeUtils.get_nodes_in_group_for_node(self, "DataCenter"):
-		if team != get_node("/root/App").get_node_for_net_id(data_center.team_net_id):
+		if data_center.team_path != team_path:
 			continue
 		if data_center.producing != "":
 			continue
@@ -181,23 +168,17 @@ func produce_unit_for_team(team_net_id):
 		break
 
 @rpc("any_peer", "reliable")
-func request_target(team_net_id):
+func request_target(team_path):
 	if not multiplayer.is_server():
 		return
 
-	target_for_team(team_net_id)
+	target_for_team(team_path)
 
-func target_for_team(team_net_id):
-	var team = get_node("/root/App").get_node_for_net_id(team_net_id)
-
-	if team == null:
-		print("ERROR - no team for net_id: ", team_net_id)
-		return
-
+func target_for_team(team_path):
 	for spam_bot in NodeUtils.get_nodes_in_group_for_node(self, "SpamBot"):
-		if team != get_node("/root/App").get_node_for_net_id(spam_bot.team_net_id):
+		if spam_bot.team_path != team_path:
 			continue
-		if spam_bot.target_net_id != -1 or spam_bot.target_position != Vector2.ZERO:
+		if spam_bot.target_path != NodePath() or spam_bot.target_position != Vector2.ZERO:
 			continue
 
 		var transmission_towers = NodeUtils.get_nodes_in_group_for_node(self, "TransmissionTower")
@@ -205,5 +186,5 @@ func target_for_team(team_net_id):
 		if transmission_tower == null:
 			return
 
-		spam_bot.target_net_id = transmission_tower.net_id
+		spam_bot.target_path = transmission_tower.get_path()
 		break

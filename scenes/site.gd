@@ -1,18 +1,8 @@
 extends Sprite2D
 
 
-@export var net_id = -1
-@export var water_net_id = -1
+@export var water_path: NodePath
 
-func init(initial_net_id, initial_water_net_id, initial_global_position):
-	net_id = initial_net_id
-	water_net_id = initial_water_net_id
+func init(initial_water_path, initial_global_position):
+	water_path = initial_water_path
 	global_position = initial_global_position
-
-func _ready():
-	var app = get_node("/root/App")
-	app.register_net_node(net_id, self)
-
-func _exit_tree():
-	if net_id != -1:
-		get_node("/root/App").net_nodes.erase(net_id)

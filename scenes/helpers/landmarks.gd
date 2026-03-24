@@ -31,7 +31,7 @@ func init(random_seed, map, parent):
 			if collision:
 				continue
 				
-			mine.init(get_node("/root/App").get_new_net_id(), pos)
+			mine.init(pos)
 			parent.add_child(mine, true)
 			break
 			
@@ -63,29 +63,29 @@ func init(random_seed, map, parent):
 			if collision:
 				continue
 
-			water.init(get_node("/root/App").get_new_net_id(), pos)
+			water.init(pos)
 			# TODO: it's possible this could get called more than once
 			parent.add_child(water, true)
 
 			var site_number = 0
 			if map.is_ground_block(x - 3, y, 1):
 				var site = load("res://scenes/site.tscn").instantiate()
-				site.init(get_node("/root/App").get_new_net_id(), water.net_id, map_origin + tile_size / 2 + Vector2(x - 3, y) * tile_size)
+				site.init(water.get_path(), map_origin + tile_size / 2 + Vector2(x - 3, y) * tile_size)
 				parent.add_child(site, true)
 				site_number += 1
 			if map.is_ground_block(x + 3, y, 1):
 				var site = load("res://scenes/site.tscn").instantiate()
-				site.init(get_node("/root/App").get_new_net_id(), water.net_id, map_origin + tile_size / 2 + Vector2(x + 3, y) * tile_size)
+				site.init(water.get_path(), map_origin + tile_size / 2 + Vector2(x + 3, y) * tile_size)
 				parent.add_child(site, true)
 				site_number += 1
 			if map.is_ground_block(x, y - 3, 1):
 				var site = load("res://scenes/site.tscn").instantiate()
-				site.init(get_node("/root/App").get_new_net_id(), water.net_id, map_origin + tile_size / 2 + Vector2(x, y - 3) * tile_size)
+				site.init(water.get_path(), map_origin + tile_size / 2 + Vector2(x, y - 3) * tile_size)
 				parent.add_child(site, true)
 				site_number += 1
 			if map.is_ground_block(x, y + 3, 1):
 				var site = load("res://scenes/site.tscn").instantiate()
-				site.init(get_node("/root/App").get_new_net_id(), water.net_id, map_origin + tile_size / 2 + Vector2(x, y + 3) * tile_size)
+				site.init(water.get_path(), map_origin + tile_size / 2 + Vector2(x, y + 3) * tile_size)
 				parent.add_child(site, true)
 				site_number += 1
 
@@ -118,7 +118,7 @@ func init(random_seed, map, parent):
 			if collision:
 				continue
 
-			transmission_tower.init(get_node("/root/App").get_new_net_id(), pos)
+			transmission_tower.init(pos)
 			parent.add_child(transmission_tower, true)
 			break
 			

@@ -6,42 +6,7 @@ const MAX_MATCHES = 5
 var rng = RandomNumberGenerator.new()
 
 var waiting_peer_ids = []
-
 var matches = {}
-
-# I use net ids because eventually I need clients to be able to say:
-# "I want THIS Spam Bot to target THAT Transmission Tower"
-# and I need the server, and all clients, to understand this
-var net_nodes = {}
-
-# server-only
-func get_new_net_id():
-	var net_id = rng.randi()
-	# ensure no net_id collisions
-	while net_nodes.has(net_id):
-		net_id = rng.randi()
-
-	return net_id
-
-func register_net_node(net_id, node):
-	var arena = NodeUtils.get_first_ancestor_in_group_for_node(node, "Arena")
-	net_nodes[net_id] = {
-		"match_id": arena.match_id,
-		"node": node
-	}
-
-func get_node_for_net_id(net_id):
-	return net_nodes[net_id]["node"]
-
-func erase_net_nodes_in_match(match_id):
-	var net_nodes_to_remove = []
-
-	for net_id in net_nodes:
-		if net_nodes[net_id]["match_id"] == match_id:
-			net_nodes_to_remove.append(net_id)
-
-	for net_id in net_nodes_to_remove:
-		net_nodes.erase(net_id)
 
 func get_arena_for_peer(peer_id):
 	for arena in $Matches.get_children():
@@ -91,8 +56,8 @@ func _process(_delta: float) -> void:
 
 	if Input.is_action_just_pressed("single_player"):
 		var proto_teams = [
-			{"type": "human", "peer_id": 1, "ready": false, "net_id": get_new_net_id()},
-			{"type": "computer", "peer_id": 1, "ready": true, "net_id": get_new_net_id()},
+			{"type": "human", "peer_id": 1, "ready": false},
+			{"type": "computer", "peer_id": 1, "ready": true},
 		]
 
 		var match_id = rng.randi()
@@ -174,7 +139,6 @@ func try_match_making():
 				"type": "human",
 				"peer_id": waiting_peer_ids.pop_front(),
 				"ready": false,
-				"net_id": get_new_net_id(),
 			})
 
 		var match_id = rng.randi()
@@ -205,6 +169,9 @@ func try_match_making():
 func announce_boot_arena(match_id):
 	var arena = load("res://scenes/arena.tscn").instantiate()
 	arena.match_id = match_id
+	# NOTE: this is the key - consistent Arena naming will allow me
+	# to use node paths to sync across the network
+	arena.name = "Arena_%d" % match_id
 	$Matches.add_child(arena, true)
 	arena.leave_requested.connect(_on_arena_leave_requested.bind(arena))
 
@@ -291,7 +258,6 @@ func announce_leave_match(match_id):
 
 	print("Freeing arena for peer id: ", multiplayer.get_unique_id())
 	matches.erase(match_id)
-	erase_net_nodes_in_match(match_id)
 	arena.queue_free()
 
 	if DisplayServer.get_name() != "headless":

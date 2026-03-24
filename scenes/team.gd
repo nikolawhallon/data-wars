@@ -7,7 +7,6 @@ signal clicks_updated
 
 @export var type = ""
 @export var peer_id = -1
-@export var net_id = -1
 @export var inverted = false
 
 @export var minerals := 0:
@@ -31,30 +30,7 @@ signal clicks_updated
 		clicks = value
 		clicks_updated.emit(clicks)
 
-func init(initial_net_id, initial_peer_id, initial_type, initial_inverted):
-	net_id = initial_net_id
+func init(initial_peer_id, initial_type, initial_inverted):
 	peer_id = initial_peer_id
 	type = initial_type
 	inverted = initial_inverted
-
-func _ready():
-	var app = get_node("/root/App")
-	app.register_net_node(net_id, self)
-
-	if is_local_human():
-		$Camera2D.make_current()
-
-func _process(delta: float) -> void:
-	if not is_local_human():
-		return
-
-	var speed = 1000.0
-	var dir = Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	$Camera2D.global_position += dir * speed * delta
-
-func is_local_human():
-	return type == "human" and peer_id == multiplayer.get_unique_id()
-
-func _exit_tree():
-	if net_id != -1:
-		get_node("/root/App").net_nodes.erase(net_id)

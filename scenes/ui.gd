@@ -1,7 +1,7 @@
 extends CanvasLayer
 
 
-func init(teams):
+func connect_signals(teams):
 	print("Connecting team data/minerals/clicks update signals to the UI")
 	
 	assert(len(teams) == 2)
@@ -18,12 +18,12 @@ func init(teams):
 
 	var local_human_team = null
 
-	if non_inverted_team.is_local_human():
+	if non_inverted_team.type == "human" and non_inverted_team.peer_id == multiplayer.get_unique_id():
 		local_human_team = non_inverted_team
-	elif inverted_team.is_local_human():
+	elif inverted_team.type == "human" and inverted_team.peer_id == multiplayer.get_unique_id():
 		local_human_team = inverted_team
 	else:
-		print("ERROR - no local human team")
+		print("WARN - no local human team")
 
 	local_human_team.data_updated.connect(_on_local_human_team_data_updated)
 	_on_local_human_team_data_updated(local_human_team.data)

@@ -19,3 +19,5 @@ _spawnable_scenes = PackedStringArray("uid://cie4t3j8pbmx5", "uid://wr2c42ml2uv5
 spawn_path = NodePath("../Replicated")
 
 [node name="UI" parent="." unique_id=1183069547 instance=ExtResource("4_xdvfk")]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1006162195]
