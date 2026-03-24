@@ -169,7 +169,7 @@ func try_match_making():
 func announce_boot_arena(match_id):
 	var arena = load("res://scenes/arena.tscn").instantiate()
 	arena.match_id = match_id
-	# NOTE: this is the key - consistent Arena naming will allow me
+	# NOTE: this is key - consistent Arena naming will allow me
 	# to use node paths to sync across the network
 	arena.name = "Arena_%d" % match_id
 	$Matches.add_child(arena, true)
