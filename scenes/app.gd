@@ -192,8 +192,14 @@ func try_match_making():
 		if DisplayServer.get_name() == "headless":
 			announce_boot_arena.rpc_id(1, match_id)
 
+		# Collect unique peer_ids to avoid duplicate RPCs
+		var peer_ids = []
 		for proto_team in proto_teams:
-			announce_boot_arena.rpc_id(proto_team["peer_id"], match_id)
+			if not peer_ids.has(proto_team["peer_id"]):
+				peer_ids.append(proto_team["peer_id"])
+
+		for id in peer_ids:
+			announce_boot_arena.rpc_id(id, match_id)
 
 @rpc("call_local", "reliable")
 func announce_boot_arena(match_id):
