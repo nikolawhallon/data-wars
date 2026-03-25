@@ -174,16 +174,15 @@ func _on_connect_text_submitted(text):
 
 func host_game(port):
 	var peer = null
-	var max_connections = null
+	var result = null
 
 	if DisplayServer.get_name() == "headless":
 		peer = WebSocketMultiplayerPeer.new()
-		max_connections = MAX_MATCHES * MAX_TEAMS + 1
+		result = peer.create_server(port)
 	else:
 		peer = ENetMultiplayerPeer.new()
-		max_connections = MAX_TEAMS
+		result = peer.create_server(port, MAX_TEAMS)
 
-	var result = peer.create_server(port, max_connections)
 	if result != OK:
 		print("Failed to host: ", result)
 		return false
