@@ -56,6 +56,11 @@ func _ready():
 		if host_game(8000):
 			state = State.WAITING
 
+	if OS.get_name() == "Web":
+		$LobbyUI/HotKeyMarginContainer/Label.text = "[S]   SOLO\n[Q]   QUEUE\n[ESC] CANCEL"
+	else:
+		$LobbyUI/HotKeyMarginContainer/Label.text = "[S]   SOLO\n[H]   HOST\n[C]   CONNECT\n[Q]   QUEUE\n[ESC] CANCEL"
+
 func _process(_delta: float) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
@@ -82,6 +87,15 @@ func _process(_delta: float) -> void:
 		quick_text_input.text_submitted.connect(_on_connect_text_submitted)
 		$LobbyUI.add_child(quick_text_input)
 		quick_text_input.grab_focus()
+
+	if state == State.DEFAULT and Input.is_action_just_pressed("queue"):
+		if queue_game():
+			state = State.WAITING
+			$LobbyUI/InfoMarginContainer/Label.text = "WAITING FOR OPPONENT"
+		else:
+			$LobbyUI/InfoMarginContainer/Label.text = "FAILED TO QUEUE"
+			multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+			state = State.DEFAULT
 
 	if state == State.DEFAULT and Input.is_action_just_pressed("single_player"):
 		var proto_teams = [
@@ -117,6 +131,15 @@ func _on_connected_to_server() -> void:
 
 func _on_connection_failed() -> void:
 	print("Connection failed")
+	if multiplayer.multiplayer_peer is ENetMultiplayerPeer:
+		$LobbyUI/InfoMarginContainer/Label.text = "FAILED TO CONNECT"
+	elif multiplayer.multiplayer_peer is WebSocketMultiplayerPeer:
+		$LobbyUI/InfoMarginContainer/Label.text = "FAILED TO QUEUE"
+	else:
+		print("ERROR - this code path should be impossible")
+
+	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+	state = State.DEFAULT
 
 func _on_server_disconnected() -> void:
 	print("Server disconnected")
@@ -125,6 +148,7 @@ func _on_server_disconnected() -> void:
 		arena.queue_free()
 
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+	state = State.DEFAULT
 
 func _on_host_text_submitted(text):
 	if host_game(int(text)):
@@ -149,14 +173,16 @@ func _on_connect_text_submitted(text):
 		$LobbyUI/InfoMarginContainer/Label.text = "FAILED TO CONNECT"
 
 func host_game(port):
-	if multiplayer.multiplayer_peer is ENetMultiplayerPeer:
-		return true
+	var peer = null
+	var max_connections = null
 
-	var max_connections = MAX_TEAMS
 	if DisplayServer.get_name() == "headless":
+		peer = WebSocketMultiplayerPeer.new()
 		max_connections = MAX_MATCHES * MAX_TEAMS + 1
+	else:
+		peer = ENetMultiplayerPeer.new()
+		max_connections = MAX_TEAMS
 
-	var peer = ENetMultiplayerPeer.new()
 	var result = peer.create_server(port, max_connections)
 	if result != OK:
 		print("Failed to host: ", result)
@@ -179,6 +205,18 @@ func connect_game(ip, port):
 
 	multiplayer.multiplayer_peer = peer
 	print("Connected to: ", ip, ":", port)
+
+	return true
+
+func queue_game():
+	var peer = WebSocketMultiplayerPeer.new()
+	var result = peer.create_client("wss://data-wars.deepgram.com")
+	if result != OK:
+		print("Failed to connect: ", result)
+		return false
+
+	multiplayer.multiplayer_peer = peer
+	print("Connected to: wss://data-wars.deepgram.com")
 
 	return true
 

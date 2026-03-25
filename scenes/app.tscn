@@ -26,6 +26,7 @@ size_flags_vertical = 0
 text = "[S]   SOLO
 [H]   HOST
 [C]   CONNECT
+[Q]   QUEUE
 [ESC] CANCEL"
 label_settings = ExtResource("2_1670a")
 
