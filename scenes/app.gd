@@ -42,10 +42,16 @@ func get_peer_ids_for_match(match_id):
 
 	return peer_ids
 
+func reset_multiplayer_peer():
+	if multiplayer.multiplayer_peer:
+		multiplayer.multiplayer_peer.close()
+	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+
 func _ready():
 	rng.randomize()
 
 	multiplayer.peer_connected.connect(_on_peer_connected)
+	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	multiplayer.connected_to_server.connect(_on_connected_to_server)
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
@@ -67,7 +73,7 @@ func _process(_delta: float) -> void:
 
 	if Input.is_action_just_pressed("cancel"):
 		state = State.DEFAULT
-		multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+		reset_multiplayer_peer()
 		$LobbyUI/InfoMarginContainer/Label.text = ""
 		if quick_text_input != null:
 			quick_text_input.queue_free()
@@ -94,7 +100,7 @@ func _process(_delta: float) -> void:
 			$LobbyUI/InfoMarginContainer/Label.text = "WAITING FOR OPPONENT"
 		else:
 			$LobbyUI/InfoMarginContainer/Label.text = "FAILED TO QUEUE"
-			multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+			reset_multiplayer_peer()
 			state = State.DEFAULT
 
 	if state == State.DEFAULT and Input.is_action_just_pressed("single_player"):
@@ -126,6 +132,18 @@ func _on_peer_connected(peer_id: int) -> void:
 	waiting_peer_ids.append(peer_id)
 	try_match_making()
 
+func _on_peer_disconnected(peer_id: int) -> void:
+	print("Peer disconnected with peer id: ", peer_id)
+
+	if not multiplayer.is_server():
+		return
+
+	waiting_peer_ids.erase(peer_id)
+
+	var arena = get_arena_for_peer(peer_id)
+	if arena:
+		leave_match_for_peer(arena.match_id)
+
 func _on_connected_to_server() -> void:
 	print("Connected to server")
 
@@ -138,7 +156,7 @@ func _on_connection_failed() -> void:
 	else:
 		print("ERROR - this code path should be impossible")
 
-	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+	reset_multiplayer_peer()
 	state = State.DEFAULT
 
 func _on_server_disconnected() -> void:
@@ -147,7 +165,7 @@ func _on_server_disconnected() -> void:
 	for arena in $Matches.get_children():
 		arena.queue_free()
 
-	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+	reset_multiplayer_peer()
 	state = State.DEFAULT
 
 func _on_host_text_submitted(text):
@@ -355,4 +373,4 @@ func announce_leave_match(match_id):
 
 	if DisplayServer.get_name() != "headless":
 		state = State.DEFAULT
-		multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+		reset_multiplayer_peer()
