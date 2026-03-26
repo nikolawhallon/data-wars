@@ -20,10 +20,10 @@ var state = State.DEFAULT
 var quick_text_input = null
 
 func get_arena_for_peer(peer_id):
-	for arena in $Matches.get_children():
-		for team in NodeUtils.get_nodes_in_group_for_node(arena, "Team"):
-			if team.peer_id == peer_id:
-				return arena
+	for match_id in matches:
+		for proto_team in matches[match_id]["proto_teams"]:
+			if proto_team["peer_id"] == peer_id:
+				return get_arena_by_match_id(match_id)
 	return null
 
 func get_arena_by_match_id(match_id):
@@ -348,9 +348,7 @@ func leave_match_for_peer(match_id):
 		print("ERROR - arena does not exist for match_id: ", match_id)
 		return
 
-	var peer_ids = []
-	for team in NodeUtils.get_nodes_in_group_for_node(arena, "Team"):
-		peer_ids.append(team.peer_id)
+	var peer_ids = get_peer_ids_for_match(match_id)
 
 	if DisplayServer.get_name() == "headless":
 		announce_leave_match.rpc_id(1, match_id)
