@@ -232,7 +232,6 @@ func convert_tile_array_to_tilemap():
 			if tiles[x][y] == Tiles.WALL and tiles[x][y + 1] == Tiles.GROUND and $Walls.get_cell_atlas_coords(Vector2(x, y)) != FACE:
 				tiles[x][y] = Tiles.GROUND
 				$Walls.set_cell(Vector2i(x, y), 0, FACE)
-				
 
 	for y in range(1, map_h - 1):
 		for x in range(1, map_w - 1):

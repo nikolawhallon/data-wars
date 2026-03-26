@@ -103,7 +103,7 @@ func _process(_delta: float) -> void:
 			reset_multiplayer_peer()
 			state = State.DEFAULT
 
-	if state == State.DEFAULT and Input.is_action_just_pressed("single_player"):
+	if state == State.DEFAULT and Input.is_action_just_pressed("solo"):
 		var proto_teams = [
 			{"type": "human", "peer_id": 1, "ready": false},
 			{"type": "computer", "peer_id": 1, "ready": true},
