@@ -9,6 +9,7 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.6627451, 0.40784314, 0.40784314, 1)
+anti_aliasing = false
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hj2bp"]
 bg_color = Color(0.4627451, 0.26666668, 0.38431373, 1)
@@ -17,6 +18,7 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.92941177, 0.7058824, 0.6313726, 1)
+anti_aliasing = false
 
 [node name="QuickTextInput" type="LineEdit" unique_id=731540422]
 anchors_preset = 8
