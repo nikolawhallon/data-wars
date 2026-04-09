@@ -116,6 +116,7 @@ func announce_game_over(winner_team_paths):
 	$UI.show_game_over(won)
 
 func blow_everything_up():
+	assert(multiplayer.is_server())
 	for unit in NodeUtils.get_nodes_in_group_for_node(self, "Unit"):
 		var explosion = load("res://scenes/explosion.tscn").instantiate()
 		explosion.init(unit.global_position)
@@ -146,6 +147,7 @@ func request_construct_building(team_path):
 	construct_building_for_team(team_path)
 
 func construct_building_for_team(team_path):
+	assert(multiplayer.is_server())
 	for site in NodeUtils.get_nodes_in_group_for_node(self, "Site"):
 		var data_center = load("res://scenes/data_center.tscn").instantiate()
 		data_center.init(team_path, site.water_path, site.global_position)
@@ -161,6 +163,7 @@ func request_produce_unit(team_path):
 	produce_unit_for_team(team_path)
 
 func produce_unit_for_team(team_path):
+	assert(multiplayer.is_server())
 	for data_center in NodeUtils.get_nodes_in_group_for_node(self, "DataCenter"):
 		if data_center.team_path != team_path:
 			continue
@@ -177,6 +180,7 @@ func request_target(team_path):
 	target_for_team(team_path)
 
 func target_for_team(team_path):
+	assert(multiplayer.is_server())
 	for spam_bot in NodeUtils.get_nodes_in_group_for_node(self, "SpamBot"):
 		if spam_bot.team_path != team_path:
 			continue
