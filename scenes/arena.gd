@@ -78,16 +78,18 @@ func _process(delta: float) -> void:
 			elif team.clicks == most_clicks:
 				winner_team_paths.append(team.get_path())
 
-		if DisplayServer.get_name() == "headless":
-			announce_game_over.rpc_id(1, winner_team_paths)
 		for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
+			if team.peer_id == 1:
+				continue
 			announce_game_over.rpc_id(team.peer_id, winner_team_paths)
+
+		announce_game_over(winner_team_paths)
  
 	if state == State.GAME_OVER and multiplayer.is_server():
 		# yes, this blows everything up all the time, if state is GAME_OVER, this is on purpose
 		blow_everything_up()
 
-@rpc("call_local", "reliable")
+@rpc("any_peer", "reliable")
 func announce_start_game(random_seed, proto_teams):
 	state = State.STARTING
 	print("announce_start_game for peer id: ", multiplayer.get_unique_id())
@@ -105,7 +107,7 @@ func announce_start_game(random_seed, proto_teams):
 
 		$Landmarks.init(random_seed, $Map, $Replicated)
 
-@rpc("call_local", "reliable")
+@rpc("any_peer", "reliable")
 func announce_game_over(winner_team_paths):
 	print("announce_game_over")
 	state = State.GAME_OVER
