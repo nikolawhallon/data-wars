@@ -36,28 +36,19 @@ jobs:
           EVENT="${{ github.event_name }}"
           INPUT_ENV="${{ inputs.environment }}"
 
-          echo "Event name: $EVENT"
-          echo "Input environment: $INPUT_ENV"
-
           if [ "$EVENT" = "release" ]; then
-            echo "Branch: release detected"
             echo "environment=production" >> $GITHUB_OUTPUT
             echo "export_type=release" >> $GITHUB_OUTPUT
             echo "itch_target=${{ secrets.ITCHIO_GAME }}" >> $GITHUB_OUTPUT
           elif [ "$EVENT" = "workflow_dispatch" ] && [ "$INPUT_ENV" = "production" ]; then
-            echo "Branch: workflow_dispatch with production"
             echo "environment=production" >> $GITHUB_OUTPUT
             echo "export_type=release" >> $GITHUB_OUTPUT
             echo "itch_target=${{ secrets.ITCHIO_GAME }}" >> $GITHUB_OUTPUT
           else
-            echo "Branch: staging (default)"
             echo "environment=staging" >> $GITHUB_OUTPUT
             echo "export_type=debug" >> $GITHUB_OUTPUT
             echo "itch_target=${{ secrets.ITCHIO_GAME }}-staging" >> $GITHUB_OUTPUT
           fi
-
-          echo "Outputs set:"
-          cat $GITHUB_OUTPUT
 
       - name: Setup Godot export templates
         run: |
