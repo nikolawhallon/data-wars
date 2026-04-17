@@ -4,8 +4,7 @@ class_name EnemyDecider
 signal decision_made(command: String)
 signal decision_failed(error: String)
 
-const OPENAI_URL := "https://us.api.openai.com/v1/responses"
-@export var api_key := "asdf"
+const OPENAI_URL := "https://oaiproxy.vacuumbrewstudios.com/v1/responses"
 @export var model := "gpt-4o"
 
 var http: HTTPRequest
@@ -104,8 +103,7 @@ func make_decision(world_state: Dictionary) -> void:
 	}
 
 	var headers := [
-		"Content-Type: application/json",
-		"Authorization: Bearer " + api_key
+		"Content-Type: application/json"
 	]
 
 	var err := http.request(

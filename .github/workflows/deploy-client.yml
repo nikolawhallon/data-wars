@@ -1,0 +1,105 @@
+name: Deploy client
+
+on:
+  push:
+    branches: [main]  # Deploy to staging
+  release:
+    types: [published]  # Deploy to production
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+        default: 'staging'
+
+env:
+  GODOT_VERSION: 4.6.2
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+
+    container:
+      image: barichello/godot-ci:4.6.2
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "export_type=release" >> $GITHUB_OUTPUT
+            echo "itch_target=${{ secrets.ITCHIO_GAME }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.environment }}" == "production" ]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "export_type=release" >> $GITHUB_OUTPUT
+            echo "itch_target=${{ secrets.ITCHIO_GAME }}" >> $GITHUB_OUTPUT
+          else
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "export_type=debug" >> $GITHUB_OUTPUT
+            echo "itch_target=${{ secrets.ITCHIO_GAME }}-staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Godot export templates
+        run: |
+          mkdir -v -p ~/.local/share/godot/export_templates/
+          mkdir -v -p ~/.config/
+          if [ -d /root/.config/godot ]; then
+            mv /root/.config/godot ~/.config/godot
+          fi
+          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable \
+             ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: Make build directories
+        run: mkdir -p build/web build/linux build/windows build/mac
+
+      - name: Export Linux build
+        run: |
+          echo "Building Linux for ${{ steps.env.outputs.environment }} environment"
+          godot --headless --verbose --export-${{ steps.env.outputs.export_type }} "Linux" "build/linux/data-wars.x86_64"
+
+      - name: Export Windows build
+        run: |
+          echo "Building Windows for ${{ steps.env.outputs.environment }} environment"
+          godot --headless --verbose --export-${{ steps.env.outputs.export_type }} "Windows Desktop" "build/windows/data-wars.exe"
+
+      - name: Export macOS build
+        run: |
+          echo "Building macOS for ${{ steps.env.outputs.environment }} environment"
+          godot --headless --verbose --export-${{ steps.env.outputs.export_type }} "macOS" "build/mac/data-wars.zip"
+
+      - name: Export Web build
+        run: |
+          echo "Building Web for ${{ steps.env.outputs.environment }} environment"
+          godot --headless --verbose --export-${{ steps.env.outputs.export_type }} "Web" "build/web/index.html"
+
+      - name: Patch Web build for Deepgram proxy
+        run: |
+          echo "Applying web build patches..."
+          chmod +x ./patch-web-build.sh
+          ./patch-web-build.sh build/web
+
+      - name: Install butler
+        run: |
+          apt-get update && apt-get install -y wget unzip
+          wget -O butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip butler.zip
+          chmod +x butler
+          ./butler -V
+
+      - name: Deploy to itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          echo "Deploying to ${{ secrets.ITCHIO_USERNAME }}/${{ steps.env.outputs.itch_target }}"
+          ./butler push build/linux ${{ secrets.ITCHIO_USERNAME }}/${{ steps.env.outputs.itch_target }}:linux
+          ./butler push build/windows ${{ secrets.ITCHIO_USERNAME }}/${{ steps.env.outputs.itch_target }}:windows
+          ./butler push build/mac ${{ secrets.ITCHIO_USERNAME }}/${{ steps.env.outputs.itch_target }}:mac
+          ./butler push build/web ${{ secrets.ITCHIO_USERNAME }}/${{ steps.env.outputs.itch_target }}:html5

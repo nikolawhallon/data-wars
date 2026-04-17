@@ -20,7 +20,6 @@ var unmuted_texture  := preload("res://assets/unmuted.png")
 var rng = RandomNumberGenerator.new()
 
 var meta_strike = null
-const DEEPGRAM_API_KEY = "asdf"
 var player_deepgram = null
 var enemy_deepgram = null
 
@@ -609,7 +608,7 @@ func reconnect_player_deepgram():
 		player_deepgram = null
 
 	player_deepgram = load("res://scenes/deepgram.tscn").instantiate()
-	player_deepgram.initialize(DEEPGRAM_API_KEY, "player")
+	player_deepgram.initialize("player")
 	player_deepgram.connect("binary_packet_received", _on_player_deepgram_binary_packet_received)
 	player_deepgram.connect("message_received", _on_player_deepgram_message_received)
 	add_child(player_deepgram)
@@ -620,7 +619,7 @@ func reconnect_enemy_deepgram():
 		enemy_deepgram = null
 
 	enemy_deepgram = load("res://scenes/deepgram.tscn").instantiate()
-	enemy_deepgram.initialize(DEEPGRAM_API_KEY, "enemy")
+	enemy_deepgram.initialize("enemy")
 	enemy_deepgram.connect("message_received", _on_enemy_deepgram_message_received)
 	add_child(enemy_deepgram)
 	$EnemyTimer.start()

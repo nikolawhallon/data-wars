@@ -5,7 +5,7 @@ signal message_received
 var client = WebSocketPeer.new()
 var ws_connected = false
 
-var URL = "wss://data-wars.deepgram.com/game"
+var URL = "wss://metastrike.vacuumbrewstudios.com/game"
 
 func _ready():
 	var err = client.connect_to_url(URL)

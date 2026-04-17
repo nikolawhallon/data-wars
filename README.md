@@ -12,7 +12,7 @@ And the game is hosted here (possibly with the password `data-wars`): https://va
 
 I also made "Meta Strike" - a little Twilio integration service coded up here: https://github.com/nikolawhallon/meta-strike
 
-It runs at wss://data-wars.deepgram.com and allows you to call +1(734)802-2990 at any time to order a Strike.
+It runs at wss://metastrike.vacuumbrewstudios.com and allows you to call +1(734)802-2990 at any time to order a Strike.
 During a Strike, all units and buildings in the game, on both Teams, get destroyed, and everyone has to effectively
 start over again.
 
@@ -27,13 +27,7 @@ the App Bundle - this was the only way I was able to get the OS to prompt me for
 
 ## Linux Builds
 
-The damn Linux export templates for Godot 4.6 seem to have some microphone bug. But the following got builds working for me:
-```
-cp /run/current-system/sw/bin/godot4.6 data-wars.x86_64
-chmod u+w data-wars.x86_64
-cat data-wars.pck >> data-wars.x86_64
-chmod +x data-wars.x86_64
-```
+I have to reassess the Linux build.
 
 ## Web Builds
 
@@ -42,24 +36,9 @@ stuff seems to have been totally broken in this version over 4.2 or 3.x. I went 
 hacks to get things back working again.
 
 The general idea is to pass Deepgram audio directly to the browser to playback (by-passing Godot entirely),
-and to pass microphone audio directly to Deepgram via the browser (by-passing Godot entirely). We also
-hack back in authentication. Otherwise, text messages to and from Deepgram and Godot still function.
+and to pass microphone audio directly to Deepgram via the browser (by-passing Godot entirely).
 
-### Auth Only
-
-In Web builds, in `index.js`, replace:
-```javascript
-{if(protos){socket=new WebSocket(url,protos.split(","))}else{socket=new WebSocket(url)}}
-```
-with:
-```javascript
-{if(protos){socket=new WebSocket(url,protos.split(","))}else if(url.startsWith("wss://agent.deepgram.com")){socket=new WebSocket(url,["token","DEEPGRAM_API_KEY"])}else{socket=new WebSocket(url)}}
-```
-in order to restore the use of protocols for Godot games that use WebSockets in-browser.
-
-### Full Recipe
-
-In addition to adding auth back, I needed to handle all audio in and out of Deepgram directly
+I needed to handle all audio in and out of Deepgram directly
 via the browser, not the Godot engine, for maximal performance. This also meant handling
 microphone "muting" via the browser, and a few other tricks. The following is the recipe I used.
 
@@ -75,14 +54,14 @@ let socket = null;
 try {
   const parsedUrl = new URL(url, window.location.href);
   const tag = parsedUrl.searchParams.get("tag");
-  const isDeepgram = url.startsWith("wss://agent.deepgram.com");
+  const isDeepgram = url.startsWith("wss://deeproxy.vacuumbrewstudios.com");
   const isPlayer = isDeepgram && tag === "player";
 
   if (protos) {
     socket = new WebSocket(url, protos.split(","));
 
   } else if (isDeepgram) {
-    socket = new WebSocket(url, ["token", "DEEPGRAM_API_KEY"]);
+    socket = new WebSocket(url);
 
     if (isPlayer) {
       if (window.DeepgramMic) {
@@ -145,8 +124,6 @@ try {
 socket.binaryType = "arraybuffer";
 return GodotWebSocket.create(socket, on_open, on_message, on_error, on_close)
 ```
-
-Replace `DEEPGRAM_API_KEY` above with your actual Deepgram API key.
 
 Next, in `index.html`, insert the following block **before**:
 ```html

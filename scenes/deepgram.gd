@@ -16,8 +16,7 @@ var muted = false
 var client = WebSocketPeer.new()
 var ws_connected = false
 
-var DEEPGRAM_URL = "wss://agent.deepgram.com/v1/agent/converse"
-#var DEEPGRAM_URL = "ws://localhost:8000/v1/agent/converse"
+var DEEPGRAM_URL = "wss://deeproxy.vacuumbrewstudios.com/v1/agent/converse"
 
 var prompt = """
 You are Deepgame, the voice-command assistant for the RTS game Data Wars. Interpret the team’s spoken commands and convert them into game function calls.
@@ -75,24 +74,14 @@ func _ready():
 	client.set_outbound_buffer_size(16 * 1024 * 1024)
 	print("Deepgram ready!")
 
-func initialize(api_key, tag):
+func initialize(tag):
 	await ready
 	print("Initializing Deepgram")
-	if OS.get_name() == "Web":
-		# THIS REQUIRES A MANUAL PATCH AFTER EXPORT
-		var err = client.connect_to_url(DEEPGRAM_URL + "?tag=" + tag)
-		if err != OK:
-			print("Unable to connect")
-			emit_signal("message_received", "unable to connect to deepgram;")
-			set_process(false)
-	else:
-		print("Connecting to Deepgram with Auth Headers")
-		client.handshake_headers = PackedStringArray(["Authorization: Token " + api_key])
-		var err = client.connect_to_url(DEEPGRAM_URL + "?tag=" + tag)
-		if err != OK:
-			print("Unable to connect")
-			emit_signal("message_received", "unable to connect to deepgram;")
-			set_process(false)
+	var err = client.connect_to_url(DEEPGRAM_URL + "?tag=" + tag)
+	if err != OK:
+		print("Unable to connect")
+		emit_signal("message_received", "unable to connect to deepgram;")
+		set_process(false)
 
 func inject_user_message(content):
 	var message = {
