@@ -11,8 +11,8 @@ func init(initial_team, initial_position):
 	global_position = initial_position
 	team = initial_team
 
-	$Sprite2D.material = $Sprite2D.material.duplicate()
-	var mat := $Sprite2D.material as ShaderMaterial
+	$AnimatedSprite2D.material = $AnimatedSprite2D.material.duplicate()
+	var mat := $AnimatedSprite2D.material as ShaderMaterial
 
 	if team.team == "player":
 		mat.set_shader_parameter("pal0", Color("#2c2137"))
@@ -56,9 +56,14 @@ func _physics_process(_delta: float) -> void:
 	move_and_slide()
 
 	if velocity.x > 0:
-		$Sprite2D.flip_h = true
+		$AnimatedSprite2D.flip_h = true
 	elif velocity.x < 0:
-		$Sprite2D.flip_h = false
+		$AnimatedSprite2D.flip_h = false
+
+	if collecting():
+		$AnimatedSprite2D.play("collecting")
+	else:
+		$AnimatedSprite2D.play("default")
 
 	if global_position.distance_to(target_position) < 16:
 		target = null

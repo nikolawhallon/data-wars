@@ -1,8 +1,12 @@
 [gd_scene format=3 uid="uid://cfx75ahoawsk3"]
 
 [ext_resource type="Script" uid="uid://pw4vp6juysuk" path="res://scenes/data_drone.gd" id="1_02qki"]
-[ext_resource type="Texture2D" uid="uid://cc5rkgb57p8dy" path="res://assets/data_drone.png" id="1_bdwxv"]
 [ext_resource type="Shader" uid="uid://b8t74ow17sia1" path="res://scenes/inverse.gdshader" id="2_31p4i"]
+[ext_resource type="Texture2D" uid="uid://brd1esotwhcqy" path="res://assets/data_drone/data_drone_collecting_1.png" id="3_enwto"]
+[ext_resource type="Texture2D" uid="uid://de7vk5rmvhoyp" path="res://assets/data_drone/data_drone_collecting_2.png" id="4_nqavr"]
+[ext_resource type="Texture2D" uid="uid://cwcki7xbi1p7i" path="res://assets/data_drone/data_drone_collecting_3.png" id="5_iqce3"]
+[ext_resource type="Texture2D" uid="uid://dlf8yqnhwu4vm" path="res://assets/data_drone/data_drone_collecting_4.png" id="6_23agv"]
+[ext_resource type="Texture2D" uid="uid://dlmtssvq30lq7" path="res://assets/data_drone/data_drone_idle_1.png" id="7_m2dvr"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_h2gge"]
 shader = ExtResource("2_31p4i")
@@ -10,6 +14,34 @@ shader_parameter/pal0 = Color(0.1725, 0.1294, 0.2157, 1)
 shader_parameter/pal1 = Color(0.4627, 0.2667, 0.3843, 1)
 shader_parameter/pal2 = Color(0.6627, 0.4078, 0.4078, 1)
 shader_parameter/pal3 = Color(0.9294, 0.7059, 0.6314, 1)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_lllw5"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_enwto")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_nqavr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_iqce3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_23agv")
+}],
+"loop": true,
+"name": &"collecting",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_m2dvr")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_02qki"]
 radius = 8.0
@@ -21,9 +53,10 @@ radius = 8.0
 collision_mask = 0
 script = ExtResource("1_02qki")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1270864911]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=793359440]
 material = SubResource("ShaderMaterial_h2gge")
-texture = ExtResource("1_bdwxv")
+sprite_frames = SubResource("SpriteFrames_lllw5")
+animation = &"collecting"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1022469493]
 shape = SubResource("CircleShape2D_02qki")

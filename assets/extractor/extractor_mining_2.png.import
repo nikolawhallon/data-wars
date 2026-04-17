@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://eltr5o5wj84l"
-path="res://.godot/imported/data_drone_3x.png-4162c995725c87df7c8422957cfbf62b.ctex"
+uid="uid://dawf38o5w3w8n"
+path="res://.godot/imported/extractor_mining_2.png-231f63fe50908fd1cd2165d89107eaab.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/data_drone_3x.png"
-dest_files=["res://.godot/imported/data_drone_3x.png-4162c995725c87df7c8422957cfbf62b.ctex"]
+source_file="res://assets/extractor/extractor_mining_2.png"
+dest_files=["res://.godot/imported/extractor_mining_2.png-231f63fe50908fd1cd2165d89107eaab.ctex"]
 
 [params]
 

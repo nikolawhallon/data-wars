@@ -1,8 +1,11 @@
 [gd_scene format=3 uid="uid://b58qmpiqhcbbn"]
 
-[ext_resource type="Texture2D" uid="uid://bamgrff7wjcp8" path="res://assets/extractor.png" id="1_01spe"]
 [ext_resource type="Shader" uid="uid://b8t74ow17sia1" path="res://scenes/inverse.gdshader" id="1_kljyq"]
 [ext_resource type="Script" uid="uid://j0im84kqci0h" path="res://scenes/extractor.gd" id="1_o7god"]
+[ext_resource type="Material" uid="uid://bwu2udjtslgc" path="res://resources/inverse.tres" id="3_7cl7c"]
+[ext_resource type="Texture2D" uid="uid://b1bwvk5anddcd" path="res://assets/extractor/extractor_idle_1.png" id="3_h2kmk"]
+[ext_resource type="Texture2D" uid="uid://cff43h5mkegl0" path="res://assets/extractor/extractor_mining_1.png" id="4_7cl7c"]
+[ext_resource type="Texture2D" uid="uid://dawf38o5w3w8n" path="res://assets/extractor/extractor_mining_2.png" id="5_3y8vq"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3n3yk"]
 shader = ExtResource("1_kljyq")
@@ -11,12 +14,27 @@ shader_parameter/pal1 = Color(1, 0.26666668, 0.38431373, 1)
 shader_parameter/pal2 = Color(0.6627, 0.4078, 0.4078, 1)
 shader_parameter/pal3 = Color(0.9294, 0.7059, 0.6314, 1)
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_kljyq"]
-shader = ExtResource("1_kljyq")
-shader_parameter/pal0 = Color(0.1725, 0.1294, 0.2157, 1)
-shader_parameter/pal1 = Color(0.4627, 0.2667, 0.3843, 1)
-shader_parameter/pal2 = Color(0.6627, 0.4078, 0.4078, 1)
-shader_parameter/pal3 = Color(0.9294, 0.7059, 0.6314, 1)
+[sub_resource type="SpriteFrames" id="SpriteFrames_vbxu8"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_h2kmk")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_7cl7c")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_3y8vq")
+}],
+"loop": true,
+"name": &"mining",
+"speed": 5.0
+}]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_o7god"]
 radius = 8.0
@@ -29,9 +47,10 @@ material = SubResource("ShaderMaterial_3n3yk")
 collision_mask = 0
 script = ExtResource("1_o7god")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2022751595]
-material = SubResource("ShaderMaterial_kljyq")
-texture = ExtResource("1_01spe")
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=174947791]
+material = ExtResource("3_7cl7c")
+sprite_frames = SubResource("SpriteFrames_vbxu8")
+animation = &"mining"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1525820968]
 shape = SubResource("CircleShape2D_o7god")
