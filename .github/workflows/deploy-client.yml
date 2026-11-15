@@ -2,7 +2,7 @@ name: Deploy client
 
 on:
   push:
-    branches: [main]  # Deploy to staging
+    branches: [multiplayer]  # Deploy to staging, TODO: switch back to main when merging
   release:
     types: [published]  # Deploy to production
   workflow_dispatch:
