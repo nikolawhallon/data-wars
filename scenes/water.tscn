@@ -4,8 +4,8 @@
 [ext_resource type="Texture2D" uid="uid://bbbdaxkpwel56" path="res://assets/water/water_2.png" id="2_5exq1"]
 [ext_resource type="Script" uid="uid://r8dfiebwt1x8" path="res://scenes/water.gd" id="2_p1n2c"]
 [ext_resource type="Texture2D" uid="uid://k28h030e0pph" path="res://assets/water/water_3.png" id="3_4pb3l"]
-[ext_resource type="PackedScene" uid="uid://cn0ioholkgnb2" path="res://scenes/label_8.tscn" id="3_p1n2c"]
 [ext_resource type="Texture2D" uid="uid://dyobib556uqjn" path="res://assets/water/water_4.png" id="4_htah3"]
+[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/helpers/match_visibility.tscn" id="6_xgdjl"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_a35vf"]
 animations = [{
@@ -27,9 +27,22 @@ animations = [{
 "speed": 5.0
 }]
 
-[node name="Water" type="AnimatedSprite2D" unique_id=1294920273 groups=["Water"]]
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_xgdjl"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:liters")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath(".:frame")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+
+[node name="Water" type="AnimatedSprite2D" unique_id=1294920273 groups=["Landmark", "Water"]]
 sprite_frames = SubResource("SpriteFrames_a35vf")
 script = ExtResource("2_p1n2c")
 
-[node name="Label8" parent="." unique_id=74538079 groups=["Info"] instance=ExtResource("3_p1n2c")]
-z_index = 1
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=14629320]
+replication_config = SubResource("SceneReplicationConfig_xgdjl")
+
+[node name="MatchVisibility" parent="." unique_id=1055588141 instance=ExtResource("6_xgdjl")]

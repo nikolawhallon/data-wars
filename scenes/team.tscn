@@ -1,6 +1,32 @@
 [gd_scene format=3 uid="uid://q1xyygateqac"]
 
 [ext_resource type="Script" uid="uid://cesoi4rv7uoyi" path="res://scenes/team.gd" id="1_hisic"]
+[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/helpers/match_visibility.tscn" id="2_jn8yb"]
 
-[node name="Team" type="Node" unique_id=1329451154]
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_hisic"]
+properties/0/path = NodePath(".:data")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:clicks")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath(".:minerals")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath(".:type")
+properties/3/spawn = true
+properties/3/replication_mode = 1
+properties/4/path = NodePath(".:peer_id")
+properties/4/spawn = true
+properties/4/replication_mode = 1
+properties/5/path = NodePath(".:inverted")
+properties/5/spawn = true
+properties/5/replication_mode = 1
+
+[node name="Team" type="Node" unique_id=1329451154 groups=["Team"]]
 script = ExtResource("1_hisic")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1002053596]
+replication_config = SubResource("SceneReplicationConfig_hisic")
+
+[node name="MatchVisibility" parent="." unique_id=1055588141 instance=ExtResource("2_jn8yb")]

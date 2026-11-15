@@ -3,61 +3,89 @@ extends Area2D
 
 var rng = RandomNumberGenerator.new()
 
-var team = null
-var producing = null
+@export var team_path: NodePath
+@export var producing := "":
+	set(value):
+		if producing == value:
+			return
+		producing = value
+		update_animation()
+@export var water_path: NodePath
+
+func init(initial_team_path, initial_water_path, initial_position):
+	team_path = initial_team_path
+	water_path = initial_water_path
+	global_position = initial_position
 
 func _ready() -> void:
 	rng.randomize()
 
-func init(initial_team, initial_position):
-	global_position = initial_position
-	team = initial_team
+	update_animation()
+	apply_team_palette()
+
+func apply_team_palette():
+	var team = get_node(team_path)
+
+	if not team.inverted:
+		return
 
 	$AnimatedSprite2D.material = $AnimatedSprite2D.material.duplicate()
 	var mat := $AnimatedSprite2D.material as ShaderMaterial
+	mat.set_shader_parameter("pal0", Color("#edb4a1"))
+	mat.set_shader_parameter("pal1", Color("#a96868"))
+	mat.set_shader_parameter("pal2", Color("#764462"))
+	mat.set_shader_parameter("pal3", Color("#2c2137"))
 
-	if team.team == "player":
-		mat.set_shader_parameter("pal0", Color("#2c2137"))
-		mat.set_shader_parameter("pal1", Color("#764462"))
-		mat.set_shader_parameter("pal2", Color("#a96868"))
-		mat.set_shader_parameter("pal3", Color("#edb4a1"))
-
-	if team.team == "enemy":
-		mat.set_shader_parameter("pal0", Color("#edb4a1"))
-		mat.set_shader_parameter("pal1", Color("#a96868"))
-		mat.set_shader_parameter("pal2", Color("#764462"))
-		mat.set_shader_parameter("pal3", Color("#2c2137"))
+func update_animation() -> void:
+	if producing == "":
+		$AnimatedSprite2D.play("default")
+	else:
+		$AnimatedSprite2D.play("producing")
 
 func _on_water_timer_timeout() -> void:
-	var water = get_parent()
+	if not multiplayer.is_server():
+		return
+
+	var water = get_node(water_path)
+	var team = get_node(team_path)
+
 	var consumed = water.decrement(1)
+	if consumed <= 0:
+		return
+
 	team.data += consumed
-	team.data_updated.emit()
 
 func _on_unit_timer_timeout() -> void:
+	if not multiplayer.is_server():
+		return
+
 	if producing == "spam_bot":
 		var spam_bot = load("res://scenes/spam_bot.tscn").instantiate()
-		spam_bot.init(team, global_position + Vector2(rng.randf_range(-64.0, 64.0), rng.randf_range(-64.0, 64.0)))
-		get_tree().get_current_scene().add_child(spam_bot)
+		spam_bot.init(team_path, global_position + Vector2(
+			rng.randf_range(-64.0, 64.0),
+			rng.randf_range(-64.0, 64.0)
+		))
+		get_parent().add_child(spam_bot, true)
 
-	$AnimatedSprite2D.play("default")
-	producing = null
+	producing = ""
 
-func spawn_unit(type):
+func produce_unit(type):
+	if not multiplayer.is_server():
+		return "Server only"
+
 	if producing:
-		print("WARN - this Data Center is already producing a ", producing)
+		print("WARN - this Data Center is already producing a unit: ", producing)
 		return "Unable to build unit: Data Center alreading producing a unit"
-
 	if type != "spam_bot":
 		return "Unable to build unit: Data Centers can only produce Spam Bots (spam_bot)"
+
+	var team = get_node(team_path)
 
 	if team.data < 20:
 		return "Spam Bots require 20 Data to build, Team does not have enough Data"
 
 	team.data -= 20
-	team.data_updated.emit()
-
 	producing = type
 	$UnitTimer.start()
-	$AnimatedSprite2D.play("producing")
+
 	return "Successfully started building unit"

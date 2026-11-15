@@ -1,0 +1,380 @@
+extends Node
+
+const MAX_TEAMS = 2
+const MAX_MATCHES = 5
+
+var rng = RandomNumberGenerator.new()
+
+var waiting_peer_ids = []
+var matches = {}
+
+enum State {
+	DEFAULT,
+	HOST_PRESSED,
+	CONNECT_PRESSED,
+	WAITING,
+	PLAYING
+}
+
+var state = State.DEFAULT
+var quick_text_input = null
+
+func get_arena_for_peer(peer_id):
+	for match_id in matches:
+		for proto_team in matches[match_id]["proto_teams"]:
+			if proto_team["peer_id"] == peer_id:
+				return get_arena_by_match_id(match_id)
+	return null
+
+func get_arena_by_match_id(match_id):
+	for arena in $Matches.get_children():
+		if arena.match_id == match_id:
+			return arena
+	return null
+
+func get_peer_ids_for_match(match_id):
+	var peer_ids = []
+	if !matches.has(match_id):
+		return peer_ids
+
+	for proto_team in matches[match_id]["proto_teams"]:
+		peer_ids.append(proto_team["peer_id"])
+
+	return peer_ids
+
+func reset_multiplayer_peer():
+	if multiplayer.multiplayer_peer:
+		multiplayer.multiplayer_peer.close()
+	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+
+func _ready():
+	rng.randomize()
+
+	multiplayer.peer_connected.connect(_on_peer_connected)
+	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
+	multiplayer.connected_to_server.connect(_on_connected_to_server)
+	multiplayer.connection_failed.connect(_on_connection_failed)
+	multiplayer.server_disconnected.connect(_on_server_disconnected)
+
+	print(DisplayServer.get_name())
+
+	if DisplayServer.get_name() == "headless":
+		if host_game(8000):
+			state = State.WAITING
+
+	if OS.get_name() == "Web":
+		$LobbyUI/HotKeyMarginContainer/Label.text = "[S]   SOLO\n[Q]   QUEUE\n[ESC] CANCEL"
+	else:
+		$LobbyUI/HotKeyMarginContainer/Label.text = "[S]   SOLO\n[H]   HOST\n[C]   CONNECT\n[Q]   QUEUE\n[ESC] CANCEL"
+
+func _process(_delta: float) -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+
+	if Input.is_action_just_pressed("cancel"):
+		state = State.DEFAULT
+		reset_multiplayer_peer()
+		$LobbyUI/InfoMarginContainer/Label.text = ""
+		if quick_text_input != null:
+			quick_text_input.queue_free()
+
+	if state == State.DEFAULT and Input.is_action_just_pressed("host"):
+		state = State.HOST_PRESSED
+		quick_text_input = load("res://scenes/quick_text_input.tscn").instantiate()
+		quick_text_input.set_placeholder("PORT")
+		quick_text_input.text_submitted.connect(_on_host_text_submitted)
+		$LobbyUI.add_child(quick_text_input)
+		quick_text_input.grab_focus()
+
+	if state == State.DEFAULT and Input.is_action_just_pressed("connect"):
+		state = State.CONNECT_PRESSED
+		quick_text_input = load("res://scenes/quick_text_input.tscn").instantiate()
+		quick_text_input.set_placeholder("IP:PORT")
+		quick_text_input.text_submitted.connect(_on_connect_text_submitted)
+		$LobbyUI.add_child(quick_text_input)
+		quick_text_input.grab_focus()
+
+	if state == State.DEFAULT and Input.is_action_just_pressed("queue"):
+		if queue_game():
+			state = State.WAITING
+			$LobbyUI/InfoMarginContainer/Label.text = "WAITING FOR OPPONENT"
+		else:
+			$LobbyUI/InfoMarginContainer/Label.text = "FAILED TO QUEUE"
+			reset_multiplayer_peer()
+			state = State.DEFAULT
+
+	if state == State.DEFAULT and Input.is_action_just_pressed("solo"):
+		var proto_teams = [
+			{"type": "human", "peer_id": 1, "ready": false},
+			{"type": "computer", "peer_id": 1, "ready": true},
+		]
+
+		var match_id = rng.randi()
+		var random_seed = rng.randi()
+
+		matches[match_id] = {
+			"state": "pending",
+			"proto_teams": proto_teams,
+			"seed": random_seed,
+		}
+
+		announce_boot_arena(match_id)
+
+func _on_peer_connected(peer_id: int) -> void:
+	print("Peer connected: ", peer_id)
+
+	if not multiplayer.is_server():
+		return
+
+	if waiting_peer_ids.has(peer_id):
+		return
+
+	waiting_peer_ids.append(peer_id)
+	try_match_making()
+
+func _on_peer_disconnected(peer_id: int) -> void:
+	print("Peer disconnected with peer id: ", peer_id)
+
+	if not multiplayer.is_server():
+		return
+
+	waiting_peer_ids.erase(peer_id)
+
+	var arena = get_arena_for_peer(peer_id)
+	if arena:
+		leave_match_for_peer(arena.match_id)
+
+func _on_connected_to_server() -> void:
+	print("Connected to server")
+
+func _on_connection_failed() -> void:
+	print("Connection failed")
+	if multiplayer.multiplayer_peer is ENetMultiplayerPeer:
+		$LobbyUI/InfoMarginContainer/Label.text = "FAILED TO CONNECT"
+	elif multiplayer.multiplayer_peer is WebSocketMultiplayerPeer:
+		$LobbyUI/InfoMarginContainer/Label.text = "FAILED TO QUEUE"
+	else:
+		print("ERROR - this code path should be impossible")
+
+	reset_multiplayer_peer()
+	state = State.DEFAULT
+
+func _on_server_disconnected() -> void:
+	print("Server disconnected")
+
+	for arena in $Matches.get_children():
+		arena.queue_free()
+
+	reset_multiplayer_peer()
+	state = State.DEFAULT
+
+func _on_host_text_submitted(text):
+	if host_game(int(text)):
+		if quick_text_input != null:
+			quick_text_input.queue_free()
+		state = State.WAITING
+		$LobbyUI/InfoMarginContainer/Label.text = "WAITING FOR OPPONENT"
+	else:
+		$LobbyUI/InfoMarginContainer/Label.text = "FAILED TO HOST"
+
+func _on_connect_text_submitted(text):
+	if len(text.split(":")) != 2:
+		$LobbyUI/InfoMarginContainer/Label.text = "FAILED TO CONNECT"
+		return
+
+	if connect_game(text.split(":")[0], int(text.split(":")[1])):
+		if quick_text_input != null:
+			quick_text_input.queue_free()
+		state = State.WAITING
+		$LobbyUI/InfoMarginContainer/Label.text = "WAITING FOR OPPONENT"
+	else:
+		$LobbyUI/InfoMarginContainer/Label.text = "FAILED TO CONNECT"
+
+func host_game(port):
+	var peer = null
+	var result = null
+
+	if DisplayServer.get_name() == "headless":
+		peer = WebSocketMultiplayerPeer.new()
+		result = peer.create_server(port)
+	else:
+		peer = ENetMultiplayerPeer.new()
+		result = peer.create_server(port, MAX_TEAMS)
+
+	if result != OK:
+		print("Failed to host: ", result)
+		return false
+
+	multiplayer.multiplayer_peer = peer
+	print("Hosting on port: ", port)
+
+	if DisplayServer.get_name() != "headless" and not waiting_peer_ids.has(1):
+		waiting_peer_ids.append(1)
+
+	return true
+
+func connect_game(ip, port):
+	var peer = ENetMultiplayerPeer.new()
+	var result = peer.create_client(ip, port)
+	if result != OK:
+		print("Failed to connect: ", result)
+		return false
+
+	multiplayer.multiplayer_peer = peer
+	print("Connected to: ", ip, ":", port)
+
+	return true
+
+func queue_game():
+	var peer = WebSocketMultiplayerPeer.new()
+	var result = peer.create_client("wss://data-wars.deepgram.com")
+	if result != OK:
+		print("Failed to connect: ", result)
+		return false
+
+	multiplayer.multiplayer_peer = peer
+	print("Connected to: wss://data-wars.deepgram.com")
+
+	return true
+
+func try_match_making():
+	assert(multiplayer.is_server())
+	while waiting_peer_ids.size() >= MAX_TEAMS:
+		var proto_teams = []
+		for i in MAX_TEAMS:
+			proto_teams.append({
+				"type": "human",
+				"peer_id": waiting_peer_ids.pop_front(),
+				"ready": false,
+			})
+
+		var match_id = rng.randi()
+		# ensure no match_id collisions
+		while matches.has(match_id):
+			match_id = rng.randi()
+		var random_seed = rng.randi()
+
+		matches[match_id] = {
+			"state": "pending",
+			"proto_teams": proto_teams,
+			"seed": random_seed,
+		}
+
+		# Collect unique peer_ids to avoid duplicate RPCs
+		var peer_ids = []
+		for proto_team in proto_teams:
+			if not peer_ids.has(proto_team["peer_id"]):
+				peer_ids.append(proto_team["peer_id"])
+
+		for id in peer_ids:
+			if id == 1:
+				continue
+			announce_boot_arena.rpc_id(id, match_id)
+
+		announce_boot_arena(match_id)
+
+@rpc("any_peer", "reliable")
+func announce_boot_arena(match_id):
+	$LobbyUI/InfoMarginContainer/Label.text = ""
+	$LobbyUI.visible = false
+
+	var arena = load("res://scenes/arena.tscn").instantiate()
+	arena.match_id = match_id
+	# NOTE: this is key - consistent Arena naming will allow me
+	# to use node paths to sync across the network
+	arena.name = "Arena_%d" % match_id
+	$Matches.add_child(arena, true)
+	arena.leave_requested.connect(_on_arena_leave_requested.bind(arena))
+
+	if multiplayer.is_server():
+		mark_match_ready_for_peer(multiplayer.get_unique_id(), match_id)
+	else:
+		request_mark_match_ready.rpc_id(1, match_id)
+
+@rpc("any_peer", "reliable")
+func request_mark_match_ready(match_id):
+	if not multiplayer.is_server():
+		return
+
+	mark_match_ready_for_peer(multiplayer.get_remote_sender_id(), match_id)
+
+func mark_match_ready_for_peer(peer_id, match_id):
+	assert(multiplayer.is_server())
+	if not matches.has(match_id):
+		print("WARN - matches does not have this match_id: ", match_id)
+		return
+
+	var proto_teams = matches[match_id]["proto_teams"]
+
+	for proto_team in proto_teams:
+		if proto_team["peer_id"] == peer_id:
+			proto_team["ready"] = true
+			break
+
+	for proto_team in proto_teams:
+		if not proto_team["ready"]:
+			return
+
+	var random_seed = matches[match_id]["seed"]
+	matches[match_id]["state"] = "playing"
+
+	var arena = get_arena_by_match_id(match_id)
+
+	# Collect unique peer_ids to avoid duplicate RPCs
+	var peer_ids = []
+	for proto_team in proto_teams:
+		if not peer_ids.has(proto_team["peer_id"]):
+			peer_ids.append(proto_team["peer_id"])
+
+	for id in peer_ids:
+		if id == 1:
+			continue
+		arena.announce_start_game.rpc_id(id, random_seed, proto_teams)
+
+	arena.announce_start_game(random_seed, proto_teams)
+
+func _on_arena_leave_requested(arena):
+	if multiplayer.is_server():
+		leave_match_for_peer(arena.match_id)
+	else:
+		request_leave_match.rpc_id(1, arena.match_id)
+
+@rpc("any_peer", "reliable")
+func request_leave_match(match_id):
+	if not multiplayer.is_server():
+		return
+
+	leave_match_for_peer(match_id)
+
+func leave_match_for_peer(match_id):
+	assert(multiplayer.is_server())
+	var arena = get_arena_by_match_id(match_id)
+	if arena == null:
+		print("ERROR - arena does not exist for match_id: ", match_id)
+		return
+
+	var peer_ids = get_peer_ids_for_match(match_id)
+
+	for id in peer_ids:
+		if id == 1:
+			continue
+		announce_leave_match.rpc_id(id, match_id)
+
+	announce_leave_match(match_id)
+
+@rpc("any_peer", "reliable")
+func announce_leave_match(match_id):
+	$LobbyUI.visible = true
+
+	var arena = get_arena_by_match_id(match_id)
+	if arena == null:
+		print("ERROR - arena does not exist for match_id: ", match_id)
+		return
+
+	print("Freeing arena for peer id: ", multiplayer.get_unique_id())
+	matches.erase(match_id)
+	arena.queue_free()
+
+	if DisplayServer.get_name() != "headless":
+		state = State.DEFAULT
+		reset_multiplayer_peer()

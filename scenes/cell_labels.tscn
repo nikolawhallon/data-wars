@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://wax5xqju7evu"]
-
-[ext_resource type="Script" uid="uid://dbe0niych8app" path="res://scenes/cell_labels.gd" id="1_urk2c"]
-
-[node name="CellLabels" type="Node2D" unique_id=888046892 groups=["Info"]]
-script = ExtResource("1_urk2c")

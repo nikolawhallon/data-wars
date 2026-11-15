@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://b865v5xdvbntv"]
+[gd_scene format=3 uid="uid://b2apqrnoadbkr"]
 
 [ext_resource type="Texture2D" uid="uid://bqs0qpda3i0lp" path="res://assets/explosion/explosion_1.png" id="1_hbmxj"]
 [ext_resource type="Texture2D" uid="uid://cyraeoumptyui" path="res://assets/explosion/explosion_2.png" id="2_xfoey"]
@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://dy71ythy4ef3b" path="res://assets/explosion/explosion_4.png" id="4_cun36"]
 [ext_resource type="Texture2D" uid="uid://cnp0uodtecgtw" path="res://assets/explosion/explosion_5.png" id="5_vk406"]
 [ext_resource type="Script" uid="uid://den7uq7tr8cq" path="res://scenes/explosion.gd" id="6_xfoey"]
+[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/helpers/match_visibility.tscn" id="7_v8gpv"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_4jttm"]
 animations = [{
@@ -30,8 +31,18 @@ animations = [{
 "speed": 10.0
 }]
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_xfoey"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
 [node name="Explosion" type="AnimatedSprite2D" unique_id=1643512278]
 sprite_frames = SubResource("SpriteFrames_4jttm")
 script = ExtResource("6_xfoey")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=854390432]
+replication_config = SubResource("SceneReplicationConfig_xfoey")
+
+[node name="MatchVisibility" parent="." unique_id=1055588141 instance=ExtResource("7_v8gpv")]
 
 [connection signal="animation_finished" from="." to="." method="_on_animation_finished"]
