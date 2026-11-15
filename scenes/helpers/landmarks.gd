@@ -3,7 +3,6 @@ extends Node
 
 var rng = RandomNumberGenerator.new()
 
-@rpc("call_local")
 func init(random_seed, map, parent):
 	rng.seed = random_seed
 

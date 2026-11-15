@@ -73,7 +73,6 @@ var rng = RandomNumberGenerator.new()
 func _ready():
 	pass
 
-@rpc("call_local")
 func init(random_seed):
 	rng.seed = random_seed
 	
