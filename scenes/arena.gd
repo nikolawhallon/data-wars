@@ -89,7 +89,7 @@ func _process(delta: float) -> void:
 		# yes, this blows everything up all the time, if state is GAME_OVER, this is on purpose
 		blow_everything_up()
 
-@rpc("any_peer", "reliable")
+@rpc("authority", "reliable")
 func announce_start_game(random_seed, proto_teams):
 	state = State.STARTING
 	print("announce_start_game for peer id: ", multiplayer.get_unique_id())
@@ -107,7 +107,7 @@ func announce_start_game(random_seed, proto_teams):
 
 		$Landmarks.init(random_seed, $Map, $Replicated)
 
-@rpc("any_peer", "reliable")
+@rpc("authority", "reliable")
 func announce_game_over(winner_team_paths):
 	print("announce_game_over")
 	state = State.GAME_OVER
@@ -144,6 +144,10 @@ func request_construct_building(team_path):
 	if not multiplayer.is_server():
 		return
 
+	var team = get_node_or_null(team_path)
+	if team == null or team.peer_id != multiplayer.get_remote_sender_id():
+		return
+
 	construct_building_for_team(team_path)
 
 func construct_building_for_team(team_path):
@@ -158,6 +162,10 @@ func construct_building_for_team(team_path):
 @rpc("any_peer", "reliable")
 func request_produce_unit(team_path):
 	if not multiplayer.is_server():
+		return
+
+	var team = get_node_or_null(team_path)
+	if team == null or team.peer_id != multiplayer.get_remote_sender_id():
 		return
 
 	produce_unit_for_team(team_path)
@@ -175,6 +183,10 @@ func produce_unit_for_team(team_path):
 @rpc("any_peer", "reliable")
 func request_target(team_path):
 	if not multiplayer.is_server():
+		return
+
+	var team = get_node_or_null(team_path)
+	if team == null or team.peer_id != multiplayer.get_remote_sender_id():
 		return
 
 	target_for_team(team_path)

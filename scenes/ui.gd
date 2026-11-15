@@ -23,15 +23,17 @@ func connect_signals(teams):
 	elif inverted_team.type == "human" and inverted_team.peer_id == multiplayer.get_unique_id():
 		local_human_team = inverted_team
 	else:
+		# expected on a headless server, which has no team of its own
 		print("WARN - no local human team")
 
-	local_human_team.data_updated.connect(_on_local_human_team_data_updated)
-	_on_local_human_team_data_updated(local_human_team.data)
+	if local_human_team != null:
+		local_human_team.data_updated.connect(_on_local_human_team_data_updated)
+		_on_local_human_team_data_updated(local_human_team.data)
 
 	non_inverted_team.clicks_updated.connect(_on_non_inverted_team_clicks_updated)
 	inverted_team.clicks_updated.connect(_on_inverted_team_clicks_updated)
-	_on_non_inverted_team_clicks_updated(non_inverted_team.data)
-	_on_inverted_team_clicks_updated(inverted_team.data)
+	_on_non_inverted_team_clicks_updated(non_inverted_team.clicks)
+	_on_inverted_team_clicks_updated(inverted_team.clicks)
 
 func _on_local_human_team_data_updated(value) -> void:
 	$LeftMarginContainer/VBoxContainer/HBoxContainer/DataLabel.text = str(value)

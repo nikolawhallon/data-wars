@@ -59,7 +59,12 @@ func _ready():
 	print(DisplayServer.get_name())
 
 	if DisplayServer.get_name() == "headless":
-		if host_game(8000):
+		var port = 8000
+		for arg in OS.get_cmdline_args():
+			if arg.begins_with("--port="):
+				port = int(arg.split("=")[1])
+
+		if host_game(port):
 			state = State.WAITING
 
 	if OS.get_name() == "Web":
@@ -71,7 +76,7 @@ func _process(_delta: float) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
 
-	if Input.is_action_just_pressed("cancel"):
+	if state != State.PLAYING and Input.is_action_just_pressed("cancel"):
 		state = State.DEFAULT
 		reset_multiplayer_peer()
 		$LobbyUI/InfoMarginContainer/Label.text = ""
@@ -165,6 +170,7 @@ func _on_server_disconnected() -> void:
 	for arena in $Matches.get_children():
 		arena.queue_free()
 
+	$LobbyUI.visible = true
 	reset_multiplayer_peer()
 	state = State.DEFAULT
 
@@ -227,13 +233,18 @@ func connect_game(ip, port):
 
 func queue_game():
 	var peer = WebSocketMultiplayerPeer.new()
-	var result = peer.create_client("wss://data-wars.deepgram.com")
+
+	var server_url = "wss://datawars.vacuumbrewstudios.com"
+	if OS.is_debug_build():
+		server_url = "wss://datawars.staging.vacuumbrewstudios.com"
+
+	var result = peer.create_client(server_url)
 	if result != OK:
 		print("Failed to connect: ", result)
 		return false
 
 	multiplayer.multiplayer_peer = peer
-	print("Connected to: wss://data-wars.deepgram.com")
+	print("Connected to: ", server_url)
 
 	return true
 
@@ -273,10 +284,14 @@ func try_match_making():
 
 		announce_boot_arena(match_id)
 
-@rpc("any_peer", "reliable")
+@rpc("authority", "reliable")
 func announce_boot_arena(match_id):
 	$LobbyUI/InfoMarginContainer/Label.text = ""
 	$LobbyUI.visible = false
+
+	# the headless server stays WAITING so it keeps hosting matches
+	if DisplayServer.get_name() != "headless":
+		state = State.PLAYING
 
 	var arena = load("res://scenes/arena.tscn").instantiate()
 	arena.match_id = match_id
@@ -356,13 +371,13 @@ func leave_match_for_peer(match_id):
 	var peer_ids = get_peer_ids_for_match(match_id)
 
 	for id in peer_ids:
-		if id == 1:
+		if id == 1 or not multiplayer.get_peers().has(id):
 			continue
 		announce_leave_match.rpc_id(id, match_id)
 
 	announce_leave_match(match_id)
 
-@rpc("any_peer", "reliable")
+@rpc("authority", "reliable")
 func announce_leave_match(match_id):
 	$LobbyUI.visible = true
 

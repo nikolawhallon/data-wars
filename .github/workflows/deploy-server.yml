@@ -1,0 +1,155 @@
+name: Deploy server
+
+on:
+  push:
+    branches: [multiplayer]  # Deploy to staging, TODO: switch back to main when merging
+  release:
+    types: [published]  # Deploy to production
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+        default: 'staging'
+
+env:
+  GODOT_VERSION: 4.6.2
+  VACUUMBREWSTUDIOS_HOST: vacuumbrewstudios.com
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+
+    container:
+      image: barichello/godot-ci:4.6.2
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Determine environment
+        id: env
+        run: |
+          BASE_NAME="${{ github.event.repository.name }}"
+          SITE_NAME="$(echo "$BASE_NAME" | tr -d '-')"
+          EVENT="${{ github.event_name }}"
+          INPUT_ENV="${{ inputs.environment }}"
+
+          if [ "$EVENT" = "release" ]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "export_type=release" >> $GITHUB_OUTPUT
+            echo "deploy_name=${BASE_NAME}" >> $GITHUB_OUTPUT
+            echo "site=${SITE_NAME}.${VACUUMBREWSTUDIOS_HOST}" >> $GITHUB_OUTPUT
+          elif [ "$EVENT" = "workflow_dispatch" ] && [ "$INPUT_ENV" = "production" ]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "export_type=release" >> $GITHUB_OUTPUT
+            echo "deploy_name=${BASE_NAME}" >> $GITHUB_OUTPUT
+            echo "site=${SITE_NAME}.${VACUUMBREWSTUDIOS_HOST}" >> $GITHUB_OUTPUT
+          else
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "export_type=debug" >> $GITHUB_OUTPUT
+            echo "deploy_name=${BASE_NAME}-staging" >> $GITHUB_OUTPUT
+            echo "site=${SITE_NAME}.staging.${VACUUMBREWSTUDIOS_HOST}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install deploy tools
+        run: apt-get update && apt-get install -y rsync openssh-client
+
+      - name: Setup Godot export templates
+        run: |
+          mkdir -v -p ~/.local/share/godot/export_templates/
+          mkdir -v -p ~/.config/
+          if [ -d /root/.config/godot ]; then
+            mv /root/.config/godot ~/.config/godot
+          fi
+          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable \
+             ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: Make build directory
+        run: mkdir -p build/linux
+
+      - name: Export Linux build
+        run: |
+          echo "Building server for ${{ steps.env.outputs.environment }} environment"
+          godot --headless --verbose --export-${{ steps.env.outputs.export_type }} "Linux" "build/linux/${{ steps.env.outputs.deploy_name }}"
+
+      - name: Install SSH key
+        run: |
+          mkdir -p $HOME/.ssh
+          echo "${{ secrets.VACUUMBREWSTUDIOS_SSH_KEY }}" > $HOME/.ssh/id_vacuumbrewstudios
+          chmod 600 $HOME/.ssh/id_vacuumbrewstudios
+          ssh-keyscan -H "$VACUUMBREWSTUDIOS_HOST" >> $HOME/.ssh/known_hosts 2>/dev/null
+
+      - name: Determine port
+        id: port
+        run: |
+          PORT=$(ssh -i $HOME/.ssh/id_vacuumbrewstudios -o StrictHostKeyChecking=accept-new root@$VACUUMBREWSTUDIOS_HOST \
+            bash -s -- "${{ steps.env.outputs.site }}" "${{ steps.env.outputs.deploy_name }}" << 'EOF'
+          set -euo pipefail
+          SITE="$1"
+          DEPLOY_NAME="$2"
+          CADDYFILE=/etc/caddy/Caddyfile
+
+          exec 9> /var/lock/vacuumbrewstudios-ports.lock
+          flock 9
+
+          PORT=$(awk -v site="$SITE" '
+            $1 == site && $2 == "{" { in_site = 1; next }
+            in_site && $1 == "reverse_proxy" { n = split($2, parts, ":"); print parts[n]; exit }
+            in_site && $1 == "}" { in_site = 0 }
+          ' "$CADDYFILE")
+
+          if [ -z "$PORT" ]; then
+            PORT=$(grep -oE 'reverse_proxy 127\.0\.0\.1:[0-9]+' "$CADDYFILE" \
+              | grep -oE '[0-9]+$' \
+              | awk '$1 >= 5000 && $1 < 6000' \
+              | sort -n | tail -1)
+            PORT=$(( ${PORT:-4999} + 1 ))
+            while [ -n "$(ss -ltnH "sport = :$PORT")" ]; do
+              PORT=$(( PORT + 1 ))
+            done
+
+            BACKUP="$CADDYFILE.bak.$(date +%s)"
+            cp "$CADDYFILE" "$BACKUP"
+            printf '\n%s {\n    reverse_proxy 127.0.0.1:%s\n}\n' "$SITE" "$PORT" >> "$CADDYFILE"
+
+            if ! caddy validate --config "$CADDYFILE" --adapter caddyfile >&2; then
+              echo "Caddyfile invalid after adding $SITE, restoring $BACKUP" >&2
+              cp "$BACKUP" "$CADDYFILE"
+              exit 1
+            fi
+
+            systemctl reload caddy >&2
+            echo "Added $SITE -> 127.0.0.1:$PORT to $CADDYFILE" >&2
+          fi
+
+          PID=$(ss -ltnpH "sport = :$PORT" | grep -oE 'pid=[0-9]+' | head -1 | cut -d= -f2 || true)
+          if [ -n "$PID" ] && [ "$(readlink /proc/$PID/cwd)" != "$HOME/$DEPLOY_NAME" ]; then
+            echo "Port $PORT for $SITE is held by another process ($(readlink /proc/$PID/exe)), refusing to deploy" >&2
+            exit 1
+          fi
+
+          echo "$PORT"
+          EOF
+          )
+          echo "Using port $PORT for ${{ steps.env.outputs.site }}"
+          echo "port=$PORT" >> $GITHUB_OUTPUT
+
+      - name: Upload build
+        run: |
+          echo "Deploying to ~/${{ steps.env.outputs.deploy_name }}/"
+          rsync -av --delete --whole-file \
+            -e "ssh -i $HOME/.ssh/id_vacuumbrewstudios -o StrictHostKeyChecking=accept-new" \
+            build/linux/ \
+            root@$VACUUMBREWSTUDIOS_HOST:~/${{ steps.env.outputs.deploy_name }}/
+
+      - name: Restart tmux session
+        run: |
+          ssh -i $HOME/.ssh/id_vacuumbrewstudios -o StrictHostKeyChecking=accept-new root@$VACUUMBREWSTUDIOS_HOST << EOF
+          tmux kill-session -t "${{ steps.env.outputs.deploy_name }}" 2>/dev/null || true
+          tmux new -d -s "${{ steps.env.outputs.deploy_name }}" "cd ~/${{ steps.env.outputs.deploy_name }} && ./${{ steps.env.outputs.deploy_name }} --headless --port=${{ steps.port.outputs.port }}"
+          EOF
