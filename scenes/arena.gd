@@ -83,6 +83,9 @@ func _process(delta: float) -> void:
 			else:
 				request_target.rpc_id(1, team.get_path())
 
+	if state == State.PLAYING and multiplayer.is_server():
+		spawn_missing_extractors()
+
 	var liters := 0
 	for water in NodeUtils.get_nodes_in_group_for_node(self, "Water"):
 		liters += water.liters
@@ -114,6 +117,8 @@ func announce_start_game(random_seed, proto_teams):
 	state = State.STARTING
 	print("announce_start_game for peer id: ", multiplayer.get_unique_id())
 	$Map.init(random_seed)
+	$CellLabels.init($Map/Walls)
+	$CellLabels.spawn_cell_labels()
 
 	if multiplayer.is_server():
 		assert(len(proto_teams) == 2)
@@ -134,6 +139,23 @@ func announce_game_over(winner_team_paths):
 	var local_team = get_local_human_team()
 	var won = local_team != null and winner_team_paths.has(local_team.get_path())
 	$UI.show_game_over(won)
+
+func spawn_missing_extractors():
+	assert(multiplayer.is_server())
+	for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
+		var extractor_number = 0
+		for extractor in NodeUtils.get_nodes_in_group_for_node(self, "Extractor"):
+			if extractor.team_path == team.get_path():
+				extractor_number += 1
+
+		var cell_label = "A1"
+		if team.inverted:
+			cell_label = "D4"
+
+		for i in 4 - extractor_number:
+			var extractor = load("res://scenes/extractor.tscn").instantiate()
+			extractor.init(team.get_path(), $CellLabels.cell_label_to_pos(cell_label))
+			$Replicated.add_child(extractor, true)
 
 func blow_everything_up():
 	assert(multiplayer.is_server())
@@ -172,12 +194,20 @@ func request_construct_building(team_path):
 
 func construct_building_for_team(team_path):
 	assert(multiplayer.is_server())
-	for site in NodeUtils.get_nodes_in_group_for_node(self, "Site"):
-		var data_center = load("res://scenes/data_center.tscn").instantiate()
-		data_center.init(team_path, site.water_path, site.global_position)
-		$Replicated.add_child(data_center, true)
-		site.queue_free()
-		break
+	var team = get_node(team_path)
+	if team.minerals < 100:
+		return
+
+	var site = NodeUtils.get_nodes_in_group_for_node(self, "Site").pick_random()
+	if site == null:
+		return
+
+	var building_type = ["data_center", "skunk_works"].pick_random()
+	var building = load("res://scenes/%s.tscn" % building_type).instantiate()
+	building.init(team_path, site.water_path, site.global_position)
+	$Replicated.add_child(building, true)
+	site.queue_free()
+	team.minerals -= 100
 
 @rpc("any_peer", "reliable")
 func request_produce_unit(team_path):
@@ -192,13 +222,22 @@ func request_produce_unit(team_path):
 
 func produce_unit_for_team(team_path):
 	assert(multiplayer.is_server())
-	for data_center in NodeUtils.get_nodes_in_group_for_node(self, "DataCenter"):
-		if data_center.team_path != team_path:
+	var idle_buildings = []
+	for building in NodeUtils.get_nodes_in_group_for_node(self, "Building"):
+		if building.team_path != team_path:
 			continue
-		if data_center.producing != "":
+		if building.producing != "":
 			continue
-		data_center.produce_unit("spam_bot")
-		break
+		idle_buildings.append(building)
+
+	var building = idle_buildings.pick_random()
+	if building == null:
+		return
+
+	if building.is_in_group("DataCenter"):
+		building.produce_unit("spam_bot")
+	else:
+		building.produce_unit(["skunk_drone", "data_drone"].pick_random())
 
 @rpc("any_peer", "reliable")
 func request_target(team_path):
@@ -213,16 +252,40 @@ func request_target(team_path):
 
 func target_for_team(team_path):
 	assert(multiplayer.is_server())
-	for spam_bot in NodeUtils.get_nodes_in_group_for_node(self, "SpamBot"):
-		if spam_bot.team_path != team_path:
+	var idle_units = []
+	for unit in NodeUtils.get_nodes_in_group_for_node(self, "Unit"):
+		if unit.team_path != team_path:
 			continue
-		if spam_bot.target_path != NodePath() or spam_bot.target_position != Vector2.ZERO:
+		if unit.target_path != NodePath() or unit.target_position != Vector2.ZERO:
 			continue
+		if get_targets_for_unit(unit).is_empty():
+			continue
+		idle_units.append(unit)
 
-		var transmission_towers = NodeUtils.get_nodes_in_group_for_node(self, "TransmissionTower")
-		var transmission_tower = transmission_towers.pick_random()
-		if transmission_tower == null:
-			return
+	var unit = idle_units.pick_random()
+	if unit == null:
+		return
 
-		spam_bot.target_path = transmission_tower.get_path()
-		break
+	var targets = get_targets_for_unit(unit)
+	var target = targets.pick_random()
+	unit.target_path = target.get_path()
+
+func get_targets_for_unit(unit):
+	var targets = []
+
+	if unit.is_in_group("SpamBot"):
+		targets = NodeUtils.get_nodes_in_group_for_node(self, "TransmissionTower")
+	elif unit.is_in_group("Extractor"):
+		targets = NodeUtils.get_nodes_in_group_for_node(self, "Mine")
+	elif unit.is_in_group("DataDrone"):
+		for data_center in NodeUtils.get_nodes_in_group_for_node(self, "DataCenter"):
+			if data_center.team_path == unit.team_path:
+				continue
+			targets.append(data_center)
+	elif unit.is_in_group("SkunkDrone"):
+		for other_unit in NodeUtils.get_nodes_in_group_for_node(self, "Unit"):
+			if other_unit.team_path == unit.team_path:
+				continue
+			targets.append(other_unit)
+
+	return targets

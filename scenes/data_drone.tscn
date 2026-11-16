@@ -1,0 +1,90 @@
+[gd_scene format=3 uid="uid://cfx75ahoawsk3"]
+
+[ext_resource type="Script" uid="uid://pw4vp6juysuk" path="res://scenes/data_drone.gd" id="1_02qki"]
+[ext_resource type="Material" uid="uid://dlqppcpnsen2f" path="res://resources/palette_material.tres" id="2_hx7rn"]
+[ext_resource type="Texture2D" uid="uid://brd1esotwhcqy" path="res://assets/data_drone/data_drone_collecting_1.png" id="3_enwto"]
+[ext_resource type="Texture2D" uid="uid://de7vk5rmvhoyp" path="res://assets/data_drone/data_drone_collecting_2.png" id="4_nqavr"]
+[ext_resource type="Texture2D" uid="uid://cwcki7xbi1p7i" path="res://assets/data_drone/data_drone_collecting_3.png" id="5_iqce3"]
+[ext_resource type="Texture2D" uid="uid://dlf8yqnhwu4vm" path="res://assets/data_drone/data_drone_collecting_4.png" id="6_23agv"]
+[ext_resource type="Texture2D" uid="uid://dlmtssvq30lq7" path="res://assets/data_drone/data_drone_idle_1.png" id="7_m2dvr"]
+[ext_resource type="PackedScene" uid="uid://c4op0islxnvi6" path="res://scenes/helpers/match_visibility.tscn" id="8_02qki"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_lllw5"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_enwto")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_nqavr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_iqce3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_23agv")
+}],
+"loop": true,
+"name": &"collecting",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_m2dvr")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_02qki"]
+radius = 8.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_31p4i"]
+radius = 8.0
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_02qki"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath("AnimatedSprite2D:flip_h")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath(".:team_path")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath(".:target_path")
+properties/3/spawn = true
+properties/3/replication_mode = 1
+properties/4/path = NodePath(".:collecting")
+properties/4/spawn = true
+properties/4/replication_mode = 1
+
+[node name="DataDrone" type="CharacterBody2D" unique_id=1663236689 groups=["DataDrone", "Unit"]]
+collision_mask = 0
+script = ExtResource("1_02qki")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=793359440]
+material = ExtResource("2_hx7rn")
+sprite_frames = SubResource("SpriteFrames_lllw5")
+animation = &"collecting"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1022469493]
+shape = SubResource("CircleShape2D_02qki")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1204678653]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=696639359]
+shape = SubResource("CircleShape2D_31p4i")
+
+[node name="DataTimer" type="Timer" parent="." unique_id=1144735497]
+autostart = true
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1297364058]
+replication_config = SubResource("SceneReplicationConfig_02qki")
+
+[node name="MatchVisibility" parent="." unique_id=1055588141 instance=ExtResource("8_02qki")]
+
+[connection signal="area_entered" from="Area2D" to="." method="_on_area_2d_area_entered"]
+[connection signal="area_exited" from="Area2D" to="." method="_on_area_2d_area_exited"]
+[connection signal="timeout" from="DataTimer" to="." method="_on_data_timer_timeout"]

@@ -29,6 +29,8 @@ func connect_signals(teams):
 	if local_human_team != null:
 		local_human_team.data_updated.connect(_on_local_human_team_data_updated)
 		_on_local_human_team_data_updated(local_human_team.data)
+		local_human_team.minerals_updated.connect(_on_local_human_team_minerals_updated)
+		_on_local_human_team_minerals_updated(local_human_team.minerals)
 
 	non_inverted_team.clicks_updated.connect(_on_non_inverted_team_clicks_updated)
 	inverted_team.clicks_updated.connect(_on_inverted_team_clicks_updated)
@@ -37,6 +39,9 @@ func connect_signals(teams):
 
 func _on_local_human_team_data_updated(value) -> void:
 	$LeftMarginContainer/VBoxContainer/HBoxContainer/DataLabel.text = str(value)
+
+func _on_local_human_team_minerals_updated(value) -> void:
+	$LeftMarginContainer/VBoxContainer/HBoxContainer/MineralsLabel.text = str(value)
 
 func _on_non_inverted_team_clicks_updated(value) -> void:
 	$RightMarginContainer/VBoxContainer/NonInvertedTeam/ClicksLabel.text = str(value)
