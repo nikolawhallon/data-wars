@@ -15,14 +15,34 @@ enum State {
 
 var state := State.VOID
 
+var physics_space := RID()
+
 func get_local_human_team():
 	for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
 		if team.peer_id == multiplayer.get_unique_id() and team.type == "human":
 			return team
 	return null
-	
+
 func _ready() -> void:
 	rng.randomize()
+
+	if multiplayer.is_server():
+		physics_space = PhysicsServer2D.space_create()
+		PhysicsServer2D.space_set_active(physics_space, true)
+		get_tree().node_added.connect(_on_node_added)
+
+func _exit_tree() -> void:
+	if physics_space.is_valid():
+		PhysicsServer2D.free_rid(physics_space)
+
+func _on_node_added(node: Node) -> void:
+	if not node is CollisionObject2D or not is_ancestor_of(node):
+		return
+
+	if node is Area2D:
+		PhysicsServer2D.area_set_space(node.get_rid(), physics_space)
+	else:
+		PhysicsServer2D.body_set_space(node.get_rid(), physics_space)
 
 func _process(delta: float) -> void:
 	if state == State.STARTING:
