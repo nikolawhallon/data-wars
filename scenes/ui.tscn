@@ -6,6 +6,16 @@
 [ext_resource type="Texture2D" uid="uid://dehm66p6hd38g" path="res://assets/non_inverted_team_clicks_icon.png" id="4_wm3ai"]
 [ext_resource type="Texture2D" uid="uid://dw0rjtta0e0ji" path="res://assets/inverted_team_clicks_icon.png" id="5_8dubc"]
 [ext_resource type="Texture2D" uid="uid://dgsvic7e7bb6" path="res://assets/minerals_icon.png" id="6_r2nq4"]
+[ext_resource type="Texture2D" uid="uid://bkfl07atfh152" path="res://assets/text_box.png" id="7_p7vwb"]
+[ext_resource type="Shader" uid="uid://cam3gov4sm1q1" path="res://scenes/shaders/darken.gdshader" id="8_k2mfa"]
+[ext_resource type="PackedScene" uid="uid://cn0ioholkgnb2" path="res://scenes/label_8.tscn" id="9_m4xqe"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_k2mfa"]
+shader = ExtResource("8_k2mfa")
+shader_parameter/pal0 = Color(0.1725, 0.1294, 0.2157, 1)
+shader_parameter/pal1 = Color(0.1725, 0.1294, 0.2157, 1)
+shader_parameter/pal2 = Color(0.4627, 0.2667, 0.3843, 1)
+shader_parameter/pal3 = Color(0.6627451, 0.40784314, 0.40784314, 1)
 
 [node name="UI" type="CanvasLayer" unique_id=1183069547]
 script = ExtResource("1_yev5y")
@@ -93,3 +103,108 @@ WATER DEPLETED
 SHAREHOLDER VALUE GENERATED"
 label_settings = ExtResource("2_yev5y")
 horizontal_alignment = 1
+
+[node name="BottomMarginContainer" type="MarginContainer" parent="." unique_id=1700446050]
+anchors_preset = -1
+anchor_top = 0.6666667
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="HBoxContainer" type="HBoxContainer" parent="BottomMarginContainer" unique_id=282780747]
+layout_mode = 2
+
+[node name="Team1" type="NinePatchRect" parent="BottomMarginContainer/HBoxContainer" unique_id=839937294]
+layout_mode = 2
+size_flags_horizontal = 3
+texture = ExtResource("7_p7vwb")
+patch_margin_left = 8
+patch_margin_top = 8
+patch_margin_right = 8
+patch_margin_bottom = 8
+
+[node name="ColorRect" type="ColorRect" parent="BottomMarginContainer/HBoxContainer/Team1" unique_id=1394827715]
+show_behind_parent = true
+material = SubResource("ShaderMaterial_k2mfa")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Transcript" parent="BottomMarginContainer/HBoxContainer/Team1" unique_id=1862047351 instance=ExtResource("9_m4xqe")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "T1:
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+DG1:
+Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+T1:
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris."
+autowrap_mode = 3
+clip_text = true
+
+[node name="Team2" type="NinePatchRect" parent="BottomMarginContainer/HBoxContainer" unique_id=1483543417]
+layout_mode = 2
+size_flags_horizontal = 3
+texture = ExtResource("7_p7vwb")
+patch_margin_left = 8
+patch_margin_top = 8
+patch_margin_right = 8
+patch_margin_bottom = 8
+
+[node name="ColorRect" type="ColorRect" parent="BottomMarginContainer/HBoxContainer/Team2" unique_id=571093842]
+show_behind_parent = true
+material = SubResource("ShaderMaterial_k2mfa")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Transcript" parent="BottomMarginContainer/HBoxContainer/Team2" unique_id=926481530 instance=ExtResource("9_m4xqe")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "T2:
+Duis aute irure dolor in reprehenderit in voluptate velit esse.
+
+DG2:
+Excepteur sint occaecat cupidatat non proident, sunt in culpa.
+
+T2:
+Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit."
+autowrap_mode = 3
+clip_text = true

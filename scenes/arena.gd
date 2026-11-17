@@ -15,6 +15,8 @@ enum State {
 
 var state := State.VOID
 
+var zoom := 1
+
 var physics_space := RID()
 
 func get_local_human_team():
@@ -32,6 +34,8 @@ func _ready() -> void:
 		get_tree().node_added.connect(_on_node_added)
 
 func _exit_tree() -> void:
+	get_window().content_scale_factor = 1
+
 	if physics_space.is_valid():
 		PhysicsServer2D.free_rid(physics_space)
 
@@ -57,7 +61,14 @@ func _process(delta: float) -> void:
 	if state == State.PLAYING:
 		var speed = 1000.0
 		var dir = Input.get_vector("move_left", "move_right", "move_up", "move_down")
-		$Camera2D.global_position += dir * speed * delta
+		$Camera2D.global_position += dir * speed * delta / zoom
+
+	if state == State.PLAYING and Input.is_action_just_pressed("zoom"):
+		if zoom == 1:
+			zoom = 2
+		else:
+			zoom = 1
+		get_window().content_scale_factor = zoom
 
 	if state == State.PLAYING and Input.is_action_just_pressed("building"):
 		var team = get_local_human_team()
