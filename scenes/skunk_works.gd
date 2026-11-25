@@ -81,11 +81,13 @@ func produce_unit(type):
 		return "Unable to build unit: Skunk Works can only produce Skunk Drones (skunk_drone) and Data Drones (data_drone)"
 
 	var team = get_node(team_path)
+	var arena = NodeUtils.get_first_ancestor_in_group_for_node(self, "Arena")
+	var cost = 100 + arena.get_unit_mineral_tax(team_path, "SkunkWorks")
 
-	if team.minerals < 50:
-		return "Drones require 50 Minerals to build, Team does not have enough Minerals"
+	if team.minerals < cost:
+		return "Drones require %d Minerals including the Mineral tax, Team does not have enough Minerals" % cost
 
-	team.minerals -= 50
+	team.minerals -= cost
 	producing = type
 	$UnitTimer.start()
 

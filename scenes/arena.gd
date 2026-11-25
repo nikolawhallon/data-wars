@@ -19,6 +19,8 @@ var zoom := 1
 
 var physics_space := RID()
 
+const EXTRACTOR_RESPAWN_SECONDS := 90.0
+
 func get_local_human_team():
 	for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
 		if team.peer_id == multiplayer.get_unique_id() and team.type == "human":
@@ -54,6 +56,8 @@ func _process(delta: float) -> void:
 		if len(teams) == 2:
 			$UI.connect_signals(teams)
 			state = State.PLAYING
+			if multiplayer.is_server():
+				spawn_initial_extractors()
 
 	if Input.is_action_just_pressed("leave"):
 		emit_signal("leave_requested")
@@ -95,7 +99,7 @@ func _process(delta: float) -> void:
 				request_target.rpc_id(1, team.get_path())
 
 	if state == State.PLAYING and multiplayer.is_server():
-		spawn_missing_extractors()
+		respawn_missing_extractors()
 
 	var liters := 0
 	for water in NodeUtils.get_nodes_in_group_for_node(self, "Water"):
@@ -151,22 +155,46 @@ func announce_game_over(winner_team_paths):
 	var won = local_team != null and winner_team_paths.has(local_team.get_path())
 	$UI.show_game_over(won)
 
-func spawn_missing_extractors():
+func spawn_extractor(team_path, pos):
+	var extractor = load("res://scenes/extractor.tscn").instantiate()
+	extractor.init(team_path, pos)
+	$Replicated.add_child(extractor, true)
+
+func spawn_initial_extractors():
+	assert(multiplayer.is_server())
+	for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
+		var cell_label = "A1"
+		if team.inverted:
+			cell_label = "D4"
+
+		for i in 4:
+			spawn_extractor(team.get_path(), $CellLabels.cell_label_to_pos(cell_label))
+
+func respawn_missing_extractors():
 	assert(multiplayer.is_server())
 	for team in NodeUtils.get_nodes_in_group_for_node(self, "Team"):
 		var extractor_number = 0
 		for extractor in NodeUtils.get_nodes_in_group_for_node(self, "Extractor"):
 			if extractor.team_path == team.get_path():
 				extractor_number += 1
-
-		var cell_label = "A1"
-		if team.inverted:
-			cell_label = "D4"
+		for timer in NodeUtils.get_nodes_in_group_for_node(self, "ExtractorRespawnTimer"):
+			if timer.get_meta("team_path") == team.get_path():
+				extractor_number += 1
 
 		for i in 4 - extractor_number:
-			var extractor = load("res://scenes/extractor.tscn").instantiate()
-			extractor.init(team.get_path(), $CellLabels.cell_label_to_pos(cell_label))
-			$Replicated.add_child(extractor, true)
+			var timer = Timer.new()
+			timer.one_shot = true
+			timer.wait_time = EXTRACTOR_RESPAWN_SECONDS
+			timer.set_meta("team_path", team.get_path())
+			timer.add_to_group("ExtractorRespawnTimer")
+			timer.timeout.connect(_on_extractor_respawn_timer_timeout.bind(timer))
+			add_child(timer)
+			timer.start()
+
+func _on_extractor_respawn_timer_timeout(timer):
+	var cell_label = "%s%d" % [$CellLabels.cols.pick_random(), $CellLabels.rows.pick_random()]
+	spawn_extractor(timer.get_meta("team_path"), $CellLabels.cell_label_to_pos(cell_label))
+	timer.queue_free()
 
 func blow_everything_up():
 	assert(multiplayer.is_server())
@@ -206,19 +234,34 @@ func request_construct_building(team_path):
 func construct_building_for_team(team_path):
 	assert(multiplayer.is_server())
 	var team = get_node(team_path)
-	if team.minerals < 100:
+
+	var building_type = ["data_center", "skunk_works"].pick_random()
+	var cost = 50 if building_type == "data_center" else 65
+	if team.minerals < cost:
 		return
 
 	var site = NodeUtils.get_nodes_in_group_for_node(self, "Site").pick_random()
 	if site == null:
 		return
 
-	var building_type = ["data_center", "skunk_works"].pick_random()
 	var building = load("res://scenes/%s.tscn" % building_type).instantiate()
 	building.init(team_path, site.water_path, site.global_position)
 	$Replicated.add_child(building, true)
 	site.queue_free()
-	team.minerals -= 100
+	team.minerals -= cost
+
+func get_unit_mineral_tax(team_path, building_group):
+	var buildings = NodeUtils.get_nodes_in_group_for_node(self, "Building")
+	var total_sites = len(NodeUtils.get_nodes_in_group_for_node(self, "Site")) + len(buildings)
+	if total_sites == 0:
+		return 0
+
+	var team_building_count = 0
+	for building in buildings:
+		if building.team_path == team_path and building.is_in_group(building_group):
+			team_building_count += 1
+
+	return roundi(float(team_building_count) / total_sites * 10)
 
 @rpc("any_peer", "reliable")
 func request_produce_unit(team_path):

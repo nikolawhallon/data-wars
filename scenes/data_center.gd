@@ -80,11 +80,16 @@ func produce_unit(type):
 		return "Unable to build unit: Data Centers can only produce Spam Bots (spam_bot)"
 
 	var team = get_node(team_path)
+	var arena = NodeUtils.get_first_ancestor_in_group_for_node(self, "Arena")
+	var mineral_tax = arena.get_unit_mineral_tax(team_path, "DataCenter")
 
-	if team.data < 20:
-		return "Spam Bots require 20 Data to build, Team does not have enough Data"
+	if team.data < 25:
+		return "Spam Bots require 25 Data to build, Team does not have enough Data"
+	if team.minerals < mineral_tax:
+		return "Spam Bots require a %d Mineral tax to build, Team does not have enough Minerals" % mineral_tax
 
-	team.data -= 20
+	team.data -= 25
+	team.minerals -= mineral_tax
 	producing = type
 	$UnitTimer.start()
 
