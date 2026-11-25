@@ -78,6 +78,7 @@ shape = SubResource("CircleShape2D_02qki")
 shape = SubResource("CircleShape2D_31p4i")
 
 [node name="DataTimer" type="Timer" parent="." unique_id=1144735497]
+wait_time = 10.0
 autostart = true
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1297364058]

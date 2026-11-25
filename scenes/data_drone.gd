@@ -94,9 +94,11 @@ func _on_area_2d_area_entered(area: Area2D) -> void:
 	if not multiplayer.is_server():
 		return
 
-	if area.is_in_group("DataCenter"):
+	if area.is_in_group("DataCenter") and area.team_path != team_path:
 		data_center_at = area
 		collecting = true
+		_on_data_timer_timeout()
+		$DataTimer.start()
 
 func _on_area_2d_area_exited(area: Area2D) -> void:
 	if not multiplayer.is_server():
@@ -114,10 +116,12 @@ func _on_data_timer_timeout() -> void:
 		return
 
 	var water = get_node(data_center_at.water_path)
-	var team = get_node(team_path)
-
-	var consumed = water.decrement(1)
-	if consumed <= 0:
+	if water.liters <= 0:
 		return
 
-	team.data += consumed
+	var team = get_node(team_path)
+	var enemy_team = get_node(data_center_at.team_path)
+
+	var stolen = min(enemy_team.data, 1)
+	enemy_team.data -= stolen
+	team.data += stolen
