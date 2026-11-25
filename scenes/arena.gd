@@ -236,7 +236,7 @@ func construct_building_for_team(team_path):
 	var team = get_node(team_path)
 
 	var building_type = ["data_center", "skunk_works"].pick_random()
-	var cost = 50 if building_type == "data_center" else 65
+	var cost = 50 if building_type == "data_center" else 100
 	if team.minerals < cost:
 		return
 
