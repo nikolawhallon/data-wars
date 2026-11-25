@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 
-const SPEED = 100.0
+const SPEED = 150.0
 
 @export var team_path: NodePath
 @export var target_path: NodePath

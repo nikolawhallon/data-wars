@@ -81,15 +81,15 @@ func produce_unit(type):
 
 	var team = get_node(team_path)
 	var arena = NodeUtils.get_first_ancestor_in_group_for_node(self, "Arena")
-	var mineral_tax = arena.get_unit_mineral_tax(team_path, "DataCenter")
+	var mineral_cost = 10 + arena.get_unit_mineral_tax(team_path, "DataCenter")
 
 	if team.data < 25:
 		return "Spam Bots require 25 Data to build, Team does not have enough Data"
-	if team.minerals < mineral_tax:
-		return "Spam Bots require a %d Mineral tax to build, Team does not have enough Minerals" % mineral_tax
+	if team.minerals < mineral_cost:
+		return "Spam Bots require %d Minerals including the Mineral tax, Team does not have enough Minerals" % mineral_cost
 
 	team.data -= 25
-	team.minerals -= mineral_tax
+	team.minerals -= mineral_cost
 	producing = type
 	$UnitTimer.start()
 

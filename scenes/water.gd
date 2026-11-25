@@ -3,7 +3,7 @@ extends AnimatedSprite2D
 
 signal liters_updated
 
-@export var liters: int = 600:
+@export var liters: int = 1200:
 	set(value):
 		liters = max(value, 0)
 		liters_updated.emit(liters)
@@ -17,9 +17,9 @@ func decrement(amount):
 
 	if liters == 0:
 		frame = 3
-	elif liters < 200:
-		frame = 2
 	elif liters < 400:
+		frame = 2
+	elif liters < 800:
 		frame = 1
 
 	return consumed
